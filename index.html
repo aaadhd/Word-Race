@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Race Classroom Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      /* 스크롤바 기본 숨김 */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      
+      /* Firefox 스크롤바 스타일 */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+      }
+      
+      /* #stage 내부 스크롤바는 필요시에만 표시 */
+      #stage::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      
+      #stage::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      #stage::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+      }
+      
+      #stage::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'display': ['"Fredoka One"', 'cursive'],
+              'sans': ['Nunito', 'sans-serif'],
+            },
+            colors: {
+              'team-a': '#3b82f6', // blue-500
+              'team-b': '#ef4444', // red-500
+              'background': '#f0f9ff', // sky-50
+              'light-bg': '#ffffff', // white
+              'correct': '#22c55e', // green-500
+              'incorrect': '#ef4444', // red-500
+              'primary-text': '#1e293b', // slate-800
+              'secondary-text': '#64748b', // slate-500
+              'accent-yellow': '#f59e0b', // amber-500
+              'accent-cyan': '#0891b2', // cyan-600
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "react": "https://esm.sh/react@^19.1.1",
+    "@google/genai": "https://esm.sh/@google/genai@^1.15.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-background font-sans">
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -27,7 +27,8 @@ const App: React.FC = () => {
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [tracingTimer, setTracingTimer] = useState<number>(0);
   const [showTracingTimer, setShowTracingTimer] = useState<boolean>(false);
-  const [teams, setTeams] = useState<Teams>(() => initializeTeams(MOCK_PLAYERS));
+  const [quizIncluded, setQuizIncluded] = useState<boolean>(true);
+  const [teams, setTeams] = useState<Teams>(initializeTeams(MOCK_PLAYERS));
 
   // 브라우저 크기에 맞춰 스케일 계산
   useEffect(() => {
@@ -57,24 +58,37 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, []);
 
-  const goToNextRound = useCallback(() => {
+  const goToNextRound = useCallback(async () => {
     if (currentRound < totalRounds) {
-        setCurrentRound(prev => prev + 1);
-        setRoundData(null);
-        setQuizTaker(null);
-        setGameState(GameState.ROUND_START);
+        // 다음 라운드 데이터를 먼저 준비
+        setIsBonusRound(Math.random() < 0.25);
+        const data = await fetchRoundData();
+        
+        if (data) {
+          // 모든 상태를 동시에 업데이트
+          setCurrentRound(prev => prev + 1);
+          setQuizTaker(null);
+          setRoundData(data);
+          setGameState(GameState.ROUND_START);
+        } else {
+          console.error("Failed to fetch round data. Ending game.");
+          setGameState(GameState.GAME_END);
+        }
     } else {
         setGameState(GameState.GAME_END);
     }
   }, [currentRound, totalRounds]);
 
-  const startGame = (rounds: number, mode: GameMode) => {
+  const startGame = (rounds: number, mode: GameMode, includeQuiz: boolean = true) => {
+    console.log('App - startGame called with:', { rounds, mode, includeQuiz });
     resetUsedWords(); // Reset word list for a new game
     setTotalRounds(rounds);
     setGameMode(mode);
+    setQuizIncluded(includeQuiz);
     setCurrentRound(1);
     setScores({ [Team.A]: 0, [Team.B]: 0 });
-    setGameState(GameState.TEAM_SETUP);
+    setTeams(initializeTeams(MOCK_PLAYERS)); // 기본 팀 설정
+    setGameState(GameState.ROUND_START); // 바로 라운드 시작으로 이동
   };
 
   useEffect(() => {
@@ -84,7 +98,7 @@ const App: React.FC = () => {
   }, [gameState, roundData, loadNextRoundData]);
 
   const handleRoundComplete = (winner: Team | null) => {
-    if (winner) {
+    if (winner && quizIncluded) {
       setQuizTaker(winner);
       setGameState(GameState.QUIZ);
     } else {
@@ -92,7 +106,7 @@ const App: React.FC = () => {
     }
   };
   
-  const handleQuizComplete = (isCorrect: boolean) => {
+  const handleQuizComplete = async (isCorrect: boolean) => {
     if (quizTaker) {
         const points = isCorrect ? 2 : 1;
         const finalPoints = isBonusRound ? points * 2 : points;
@@ -102,7 +116,24 @@ const App: React.FC = () => {
             [quizTaker]: prevScores[quizTaker] + finalPoints,
         }));
     }
-    goToNextRound();
+    
+    // 다음 라운드 데이터를 미리 준비하고 한 번에 상태 변경
+    if (currentRound < totalRounds) {
+        setIsBonusRound(Math.random() < 0.25);
+        const data = await fetchRoundData();
+        
+        if (data) {
+          // 모든 상태를 동시에 업데이트하여 깜박임 방지
+          setCurrentRound(prev => prev + 1);
+          setQuizTaker(null);
+          setRoundData(data);
+          setGameState(GameState.ROUND_START);
+        } else {
+          setGameState(GameState.GAME_END);
+        }
+    } else {
+        setGameState(GameState.GAME_END);
+    }
   };
 
   const handlePlayAgain = () => {
@@ -197,7 +228,7 @@ const App: React.FC = () => {
 
     switch (gameState) {
       case GameState.SETUP:
-        return <GameSetup onStart={startGame} />;
+        return <GameSetup onStart={(rounds, mode, includeQuiz) => startGame(rounds, mode, includeQuiz)} />;
       
       case GameState.TEAM_SETUP:
         return (
@@ -221,6 +252,7 @@ const App: React.FC = () => {
               gameMode={gameMode}
               isPaused={gameState === GameState.ROUND_START || isPaused}
               onTimerChange={handleTracingTimerChange}
+              resetActivity={gameState === GameState.ROUND_START}
             />
             {gameState === GameState.ROUND_START && (
               <RoundStart
@@ -232,7 +264,28 @@ const App: React.FC = () => {
         );
 
       case GameState.QUIZ:
-        return roundData && quizTaker && <QuizActivity quiz={roundData.quiz} playingTeam={quizTaker} onComplete={handleQuizComplete} isBonusRound={isBonusRound} />;
+        if (!roundData || !quizTaker) return null;
+        return (
+          <>
+            {/* 이전 라운드 게임 화면 유지 */}
+            <DrawingActivity
+              roundData={roundData}
+              onComplete={handleRoundComplete}
+              isBonusRound={isBonusRound}
+              gameMode={gameMode}
+              isPaused={true} // 퀴즈 중에는 게임 일시정지
+              onTimerChange={handleTracingTimerChange}
+              hideResultModal={true} // 퀴즈 중에는 tracing result 모달 숨김
+            />
+            {/* 퀴즈 모달을 게임 화면 위에 표시 */}
+            <QuizActivity 
+              quiz={roundData.quiz} 
+              playingTeam={quizTaker} 
+              onComplete={handleQuizComplete} 
+              isBonusRound={isBonusRound} 
+            />
+          </>
+        );
       case GameState.GAME_END:
         return <GameEnd scores={scores} onPlayAgain={handlePlayAgain} />;
       default:
@@ -272,7 +325,7 @@ const App: React.FC = () => {
         
         {/* Pause Overlay */}
         {isPaused && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 text-center">
               <h2 className="text-4xl font-display text-primary-text mb-6">PAUSED</h2>
               <button
@@ -287,7 +340,7 @@ const App: React.FC = () => {
 
         {/* Game Menu Modal */}
         {showMenu && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 text-center">
               <h2 className="text-4xl font-display text-primary-text mb-6">Game Menu</h2>
               <div className="flex flex-col gap-4">
@@ -316,21 +369,25 @@ const App: React.FC = () => {
 
         {/* Score Display */}
         {gameState !== GameState.SETUP && gameState !== GameState.TEAM_SETUP && (
-          <div className="flex justify-between items-center p-4 bg-white/50 backdrop-blur-sm">
-            <div className="flex items-center gap-4 p-2 pl-4 text-2xl font-bold text-white bg-team-a rounded-r-full">
-              <span className="font-display">Team A</span>
-              <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                <span>{scores[Team.A]}</span>
+          <>
+            <div className="absolute top-[88px] left-4 z-10">
+              <div className="flex items-center gap-4 p-2 pl-4 text-2xl font-bold text-white bg-team-a rounded-r-full">
+                <span className="font-display">Team A</span>
+                <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
+                  <span>{scores[Team.A]}</span>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4 p-2 pr-4 text-2xl font-bold text-white bg-team-b rounded-l-full">
-              <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                <span>{scores[Team.B]}</span>
+            <div className="absolute top-[88px] right-4 z-10">
+              <div className="flex items-center gap-4 p-2 pr-4 text-2xl font-bold text-white bg-team-b rounded-l-full">
+                <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
+                  <span>{scores[Team.B]}</span>
+                </div>
+                <span className="font-display">Team B</span>
               </div>
-              <span className="font-display">Team B</span>
             </div>
-          </div>
+          </>
         )}
 
         <div className="flex-grow overflow-auto">

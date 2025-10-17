@@ -4,10 +4,10 @@ interface QuizResultModalProps {
   status: 'success' | 'failed' | 'times_up';
   teamName: string;
   points: number;
-  onContinue: () => void;
+  isFading?: boolean;
 }
 
-const QuizResultModal: React.FC<QuizResultModalProps> = ({ status, teamName, points, onContinue }) => {
+const QuizResultModal: React.FC<QuizResultModalProps> = ({ status, teamName, points, isFading = false }) => {
   let title: string;
   let message: string;
   let titleColor: string;
@@ -36,17 +36,9 @@ const QuizResultModal: React.FC<QuizResultModalProps> = ({ status, teamName, poi
   }
 
   return (
-    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all animate-fade-in-up">
-        <h2 className={`text-5xl font-display mb-4 ${titleColor}`}>{title}</h2>
-        <p className="text-2xl text-secondary-text mb-8 min-h-[32px]">{message}</p>
-        <button
-          onClick={onContinue}
-          className="px-12 py-4 text-3xl font-display text-white bg-correct rounded-full shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300"
-        >
-          Next Round
-        </button>
-      </div>
+    <div className={`bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all animate-fade-in-up smooth-transition ${isFading ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
+      <h2 className={`text-5xl font-display mb-4 ${titleColor}`}>{title}</h2>
+      <p className="text-2xl text-secondary-text mb-8 min-h-[32px]">{message}</p>
     </div>
   );
 };

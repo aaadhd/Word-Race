@@ -15,7 +15,7 @@ interface AlertModalProps {
 
 const AlertModal: React.FC<AlertModalProps> = ({ message, onClose }) => {
   return (
-    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
       <div className="bg-white rounded-2xl shadow-2xl p-10 text-center w-full max-w-lg transform transition-all animate-fade-in-up">
         <div className="text-7xl mb-6">⚠️</div>
         <p className="text-3xl font-display text-primary-text leading-relaxed whitespace-pre-line mb-8">

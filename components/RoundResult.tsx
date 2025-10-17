@@ -47,11 +47,21 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
     const winnerClass = isWinner ? `border-yellow-400 ${teamBgClass}` : 'border-transparent';
 
     return (
-        <div className={`flex flex-col items-center p-6 rounded-2xl border-4 transition-all duration-500 ${winnerClass}`}>
+        <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-h-[240px] ${winnerClass}`} style={{ transition: 'border-color 0.5s ease, background-color 0.5s ease' }}>
             <h2 className={`text-4xl font-display ${teamColorClass}`}>{teamName}</h2>
             {showAccuracy ? (
                 <>
-                    <p className="text-7xl font-display my-2">{result?.accuracy ?? 0}%</p>
+                    <p 
+                      className="text-7xl font-display my-2 tabular-nums min-w-[200px]" 
+                      style={{ 
+                        willChange: 'auto',
+                        backfaceVisibility: 'hidden',
+                        transform: 'translate3d(0, 0, 0)',
+                        WebkitFontSmoothing: 'antialiased'
+                      }}
+                    >
+                      {result?.accuracy ?? 0}%
+                    </p>
                     <p className="text-xl">Accuracy</p>
                 </>
             ) : (
@@ -75,7 +85,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
 
 
   return (
-    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
       <div className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-4xl transform transition-all animate-fade-in-up">
         <h1 className="text-7xl font-display text-accent-yellow drop-shadow-lg">
           {gameMode === GameMode.TRACE ? 'Tracing Result!' : 'Drawing Result!'}
@@ -84,7 +94,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
         {gameMode === GameMode.DRAW && (
           <div className="flex flex-col items-center justify-center mt-4">
             {bothIncorrectInDrawMode && wordImage && (
-              <img src={wordImage} alt={word} className="w-40 h-40 object-contain rounded-xl bg-slate-100 p-2 shadow-inner mb-4" />
+              <img src={wordImage} alt={word} className="w-[312px] h-[234px] object-cover rounded-xl bg-slate-100 p-2 shadow-inner mb-4" />
             )}
             <div className="flex items-baseline justify-center gap-3">
               <p className="text-3xl text-secondary-text">The word was:</p>

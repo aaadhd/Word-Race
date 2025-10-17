@@ -7,7 +7,7 @@ interface RoundStartProps {
 
 const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
   return (
-    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
       <div className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all animate-fade-in-up">
         <h1 className="text-6xl font-display text-accent-yellow drop-shadow-md">
           Round {currentRound} Start!

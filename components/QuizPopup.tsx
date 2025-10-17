@@ -43,6 +43,8 @@ interface QuizPopupProps {
   showTeamName?: boolean; // Default: true
   feedbackDuration?: number; // Default: 1500ms
   exitDelay?: number; // Default: 500ms
+  onTimerChange?: (timeLeft: number) => void; // 타이머 변경 콜백
+  onTimeout?: () => void; // 시간 초과 콜백
 }
 
 // ===== Default Constants =====
@@ -58,7 +60,7 @@ const DEFAULT_TEAM_COLORS = {
 };
 
 const DEFAULT_CUSTOM_STYLES = {
-  modalBackground: 'bg-black/60',
+  modalBackground: 'bg-black/60 backdrop-blur-sm',
   modalContainer: 'bg-white rounded-2xl shadow-2xl',
   questionText: 'text-5xl font-bold text-center text-gray-800 leading-tight',
   headerText: 'text-2xl font-bold',
@@ -98,7 +100,9 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
   showTimer = true,
   showTeamName = true,
   feedbackDuration = 1500,
-  exitDelay = 500
+  exitDelay = 500,
+  onTimerChange,
+  onTimeout
 }) => {
   const [timeLeft, setTimeLeft] = useState(timeLimit);
   const [feedback, setFeedback] = useState<{ text: string; color: string } | null>(null);
@@ -135,8 +139,11 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
   const handleTimeout = useCallback(() => {
     setIsLocked(true);
     showFeedbackToast('timeout');
+    if (onTimeout) {
+      onTimeout();
+    }
     triggerExit(false, '');
-  }, [triggerExit]);
+  }, [triggerExit, onTimeout]);
 
   useEffect(() => {
     setTimeLeft(timeLimit);
@@ -158,12 +165,16 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
 
     timerIntervalRef.current = window.setInterval(() => {
       setTimeLeft(prev => {
+        const newTime = prev <= 1 ? 0 : prev - 1;
+        if (onTimerChange) {
+          onTimerChange(newTime);
+        }
         if (prev <= 1) {
           if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
           handleTimeout();
           return 0;
         }
-        return prev - 1;
+        return newTime;
       });
     }, 1000);
 
@@ -208,7 +219,7 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
   };
 
   const getOptionButtonClass = (opt: QuizOption) => {
-    const baseClass = "px-6 py-4 text-xl font-semibold rounded-xl border-2 transition-all duration-200";
+    const baseClass = "px-6 py-4 text-xl font-semibold rounded-xl border-2 transition-colors duration-200 min-h-[60px] flex items-center justify-center";
     
     if (isLocked) {
       if (opt.isCorrect) {
@@ -228,8 +239,8 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
   };
 
   return (
-    <div className={`absolute inset-0 ${customStyles.modalBackground} backdrop-blur-sm flex justify-center items-center z-[60] transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
-      <div className={`w-[90%] max-w-6xl min-h-[80%] ${customStyles.modalContainer} flex flex-col p-10 relative transition-transform duration-500 ${isExiting ? 'scale-90' : 'scale-100'} animate-pop-in ${isLocked ? 'quiz-locked' : ''}`}>
+    <div className={`${customStyles.modalBackground ? 'absolute inset-0' : 'contents'} ${customStyles.modalBackground} ${customStyles.modalBackground ? 'backdrop-blur-sm' : ''} flex justify-center items-center ${customStyles.modalBackground ? 'z-[60]' : ''} transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`w-[90%] max-w-6xl h-[80%] ${customStyles.modalContainer} flex flex-col p-10 relative transition-transform duration-500 ${isExiting ? 'scale-90' : 'scale-100'} animate-pop-in ${isLocked ? 'quiz-locked' : ''}`}>
         
         {/* 상단 헤더 */}
         <div className="flex justify-between items-center mb-8">
@@ -260,7 +271,7 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
         
         {/* 보기 영역 - 하단에 고정 */}
         <div className="mt-auto">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-6 h-[120px]">
             {quiz.options.map(opt => (
               <button 
                 key={opt.text} 
@@ -276,7 +287,7 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
         
         {/* 피드백 토스트 */}
         {feedback && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[70]">
             <div
               style={{ backgroundColor: feedback.color }}
               className="px-12 py-6 rounded-full text-7xl font-black text-white animate-pop-in-large"

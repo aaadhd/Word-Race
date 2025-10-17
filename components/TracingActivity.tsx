@@ -13,6 +13,8 @@ interface DrawingActivityProps {
   gameMode: GameMode;
   isPaused: boolean;
   onTimerChange?: (timeLeft: number) => void;
+  hideResultModal?: boolean;
+  resetActivity?: boolean;
 }
 
 interface RawResult {
@@ -42,7 +44,8 @@ const speakWord = (word: string) => {
 };
 
 
-const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange }) => {
+const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false }) => {
+  console.log('TracingActivity - gameMode received:', gameMode);
   const [teamADone, setTeamADone] = useState(false);
   const [teamBDone, setTeamBDone] = useState(false);
   const [teamARawResult, setTeamARawResult] = useState<RawResult | null>(null);
@@ -61,6 +64,21 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
     }
   }, [isPaused, roundStartAtMs]);
 
+  // 새로운 라운드 시작 시 모든 상태 초기화
+  useEffect(() => {
+    if (resetActivity) {
+      setTeamADone(false);
+      setTeamBDone(false);
+      setTeamARawResult(null);
+      setTeamBRawResult(null);
+      setIsScoring(false);
+      setShowResultModal(false);
+      setFinalResults(null);
+      setWinner(null);
+      setRoundStartAtMs(null);
+    }
+  }, [resetActivity, roundData.word]); // roundData.word를 의존성에 추가하여 새 라운드 감지
+
   const handleTeamADone = (hasDrawn: boolean, accuracy: number, canvasDataUrl: string) => {
     if (teamADone) return;
     setTeamARawResult({ hasDrawn, accuracy, canvasDataUrl, finishTime: Date.now() });
@@ -75,6 +93,9 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
 
   useEffect(() => {
     const processResults = async () => {
+      // 라운드 시작 상태이거나 리셋 중일 때는 결과 처리하지 않음
+      if (resetActivity) return;
+      
       if (teamADone && teamBDone && teamARawResult && teamBRawResult) {
         let finalAccuracyA = teamARawResult.accuracy;
         let finalAccuracyB = teamBRawResult.accuracy;
@@ -153,7 +174,7 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
       }
     };
     processResults();
-  }, [teamADone, teamBDone, teamARawResult, teamBRawResult, gameMode, roundData.word]);
+  }, [teamADone, teamBDone, teamARawResult, teamBRawResult, gameMode, roundData.word, resetActivity]);
   
   const handleContinueFromModal = () => {
     onComplete(winner);
@@ -170,26 +191,20 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   }
 
   return (
-    <div className="flex flex-col items-center justify-start h-full pt-4 pb-8 animate-fade-in overflow-auto">
+    <div className="relative h-full animate-fade-in overflow-auto">
       
-      {isBonusRound && (
-        <div className="flex items-center gap-4 px-6 py-2 bg-yellow-400 text-slate-900 rounded-full shadow-lg animate-bounce z-20 mb-4">
-          <StarIcon className="w-8 h-8"/>
-          <h2 className="text-3xl font-display">DOUBLE POINTS!</h2>
-          <StarIcon className="w-8 h-8"/>
-        </div>
-      )}
 
-      <div className="flex flex-col items-center justify-center gap-2 mb-6">
+      {/* Image Container - 절대 위치 */}
+      <div className="absolute top-[60px] left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center gap-2">
         {roundData.wordImage && (
             <div 
-              className="bg-slate-100 p-2 rounded-2xl shadow-lg cursor-pointer transition-transform hover:scale-110 active:scale-100"
+              className="bg-slate-100 p-1 rounded-2xl shadow-lg cursor-pointer transition-transform hover:scale-110 active:scale-100"
               onClick={() => speakWord(roundData.word)}
               role="button"
               aria-label={`Hear the word: ${roundData.word}`}
               tabIndex={0}
             >
-                <img src={roundData.wordImage} alt={gameMode === GameMode.TRACE ? roundData.word : 'Guess the word'} className="w-32 h-32 object-contain rounded-xl" />
+                <img src={roundData.wordImage} alt={gameMode === GameMode.TRACE ? roundData.word : 'Guess the word'} className="w-[249px] h-[188px] object-cover rounded-xl" />
             </div>
         )}
         <p className="text-xl text-secondary-text font-bold">
@@ -197,7 +212,8 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         </p>
       </div>
       
-      <div className="flex w-full justify-around items-center gap-8 px-4 flex-1 min-h-0">
+      {/* Drawing Canvas Container - 절대 위치 */}
+      <div className="absolute top-80 left-0 right-0 flex w-full justify-around items-center gap-8 px-2 pb-1">
         {/* Team A */}
         <div className={`flex flex-col items-center transition-opacity duration-500 ${teamADone ? 'opacity-50' : ''}`}>
           <DrawingCanvas 
@@ -225,7 +241,8 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         </div>
       </div>
 
-      {showResultModal && finalResults && (
+      {/* Result Modal */}
+      {showResultModal && finalResults && !hideResultModal && (
         <RoundResult
           winner={winner}
           results={finalResults}

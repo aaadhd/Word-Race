@@ -23,6 +23,7 @@ const getFontSize = (length: number): number => {
 };
 
 const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs, onTimerChange }) => {
+  console.log('TracingCanvas - strokeColor:', strokeColor, 'isTeamB:', strokeColor === '#ef4444');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const userCanvasRef = useRef<HTMLCanvasElement | null>(null); // Offscreen canvas for user strokes
   const [isDrawing, setIsDrawing] = useState(false);
@@ -364,12 +365,24 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const timerColorClass = timeLeft > 10 ? 'text-green-500' : timeLeft > 5 ? 'text-yellow-500' : 'text-red-500 animate-pulse';
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
+    <div className="flex flex-col items-center gap-4 w-full relative">
+      {/* 몬스터 배경 이미지 - 각 팀별로 다른 몬스터 */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <img 
+          src={strokeColor === '#3b82f6' ? '/monsterA.png' : '/monsterB.png'}
+          alt={`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} Monster`}
+          className={`w-[1200px] h-[800px] object-contain transform ${strokeColor === '#3b82f6' ? '-translate-y-[calc(10%+46px)] scale-[1.16]' : '-translate-y-[calc(10%+30px)]'}`}
+          onLoad={() => console.log(`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} 몬스터 이미지 로드됨`)}
+          onError={() => console.log(`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} 몬스터 이미지 로드 실패`)}
+        />
+      </div>
+      
       <canvas
         ref={canvasRef}
         width="550"
         height="300"
-        className="bg-white rounded-2xl cursor-crosshair shadow-inner border-2 border-slate-200"
+        className="bg-transparent rounded-2xl cursor-crosshair shadow-inner border-2 border-slate-200 relative z-10"
+        style={{ backgroundColor: 'transparent' }}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

@@ -8,6 +8,7 @@ interface DrawingCanvasProps {
   mode: GameMode;
   isPaused: boolean;
   startAtMs: number | null;
+  onTimerChange?: (timeLeft: number) => void;
 }
 
 const TRACING_TIME_SECONDS = 20;
@@ -21,19 +22,35 @@ const getFontSize = (length: number): number => {
     return 55;
 };
 
-const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs }) => {
+const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs, onTimerChange }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const userCanvasRef = useRef<HTMLCanvasElement | null>(null); // Offscreen canvas for user strokes
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TRACING_TIME_SECONDS);
 
-  // Initialize the offscreen canvas for user drawings
+  // Initialize the offscreen canvas for user drawings and set up non-passive event listeners
   useEffect(() => {
-    if (canvasRef.current && !userCanvasRef.current) {
+    const canvas = canvasRef.current;
+    if (canvas && !userCanvasRef.current) {
         userCanvasRef.current = document.createElement('canvas');
-        userCanvasRef.current.width = canvasRef.current.width;
-        userCanvasRef.current.height = canvasRef.current.height;
+        userCanvasRef.current.width = canvas.width;
+        userCanvasRef.current.height = canvas.height;
+
+        // Add non-passive event listeners to prevent default touch behaviors
+        const preventDefaultHandler = (e: TouchEvent) => {
+          e.preventDefault();
+        };
+
+        canvas.addEventListener('touchstart', preventDefaultHandler, { passive: false });
+        canvas.addEventListener('touchmove', preventDefaultHandler, { passive: false });
+        canvas.addEventListener('touchend', preventDefaultHandler, { passive: false });
+
+        return () => {
+          canvas.removeEventListener('touchstart', preventDefaultHandler);
+          canvas.removeEventListener('touchmove', preventDefaultHandler);
+          canvas.removeEventListener('touchend', preventDefaultHandler);
+        };
     }
   }, []);
 
@@ -204,6 +221,13 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     return () => clearInterval(id);
   }, [isPaused, startAtMs, finishAttempt]);
 
+  // 타이머 값이 변경될 때마다 부모 컴포넌트에 알림
+  useEffect(() => {
+    if (onTimerChange) {
+      onTimerChange(timeLeft);
+    }
+  }, [timeLeft, onTimerChange]);
+
   const handleClear = () => {
     // Clear visible canvas and redraw template
     const canvas = canvasRef.current;
@@ -227,7 +251,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   }
   
   const handleTouchStart = (handler: () => void) => (event: React.TouchEvent) => {
-    event.preventDefault(); // Prevents firing onClick and other browser actions
+    // preventDefault()는 네이티브 이벤트 리스너에서 처리됨
     handler();
   };
 
@@ -235,8 +259,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // Prevent default behavior for all events, especially touch events
-    event.preventDefault();
+    // preventDefault()는 네이티브 이벤트 리스너에서 처리됨
     
     let coords;
     if ('touches' in event) {
@@ -281,7 +304,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     // Get coordinates relative to the visible canvas
     let coords;
     if ('touches' in event) {
-        event.preventDefault();
         if (event.targetTouches.length === 0) return;
         coords = { x: event.targetTouches[0].clientX, y: event.targetTouches[0].clientY };
     } else {
@@ -321,10 +343,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   }, [isDrawing, strokeColor]);
 
   const stopDrawing = (event?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    // Prevent default behavior for touch events
-    if (event) {
-      event.preventDefault();
-    }
+    // preventDefault()는 네이티브 이벤트 리스너에서 처리됨
     
     // End path on visible canvas
     const canvas = canvasRef.current;
@@ -346,9 +365,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      <div className={`text-5xl font-display ${timerColorClass}`}>
-        {timeLeft}
-      </div>
       <canvas
         ref={canvasRef}
         width="550"

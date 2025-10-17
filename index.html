@@ -7,31 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&family=Luckiest+Guy&display=swap" rel="stylesheet">
     <style>
-      /* 스크롤바 기본 숨김 */
+      /* 전역 스크롤바 기본 숨김 */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      
-      ::-webkit-scrollbar-track {
+        width: 0px;
+        height: 0px;
         background: transparent;
       }
       
-      ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-      }
-      
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.3);
-      }
-      
-      /* Firefox 스크롤바 스타일 */
+      /* Firefox 스크롤바 숨김 */
       * {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        scrollbar-width: none;
       }
       
       /* #stage 내부 스크롤바는 필요시에만 표시 */
@@ -51,6 +38,23 @@
       
       #stage::-webkit-scrollbar-thumb:hover {
         background: rgba(0, 0, 0, 0.2);
+      }
+      
+      /* 스크롤이 필요한 경우에만 스크롤바 표시 */
+      #stage:hover::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      
+      /* #stage 고정 크기 강제 설정 */
+      #stage {
+        width: 1280px !important;
+        height: 800px !important;
+        min-width: 1280px !important;
+        min-height: 800px !important;
+        max-width: 1280px !important;
+        max-height: 800px !important;
+        flex-shrink: 0 !important;
       }
     </style>
     <script>

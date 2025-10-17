@@ -8,17 +8,18 @@ interface QuizActivityProps {
   playingTeam: Team;
   onComplete: (isCorrect: boolean) => void;
   isBonusRound: boolean;
+  onTimerChange?: (timeLeft: number) => void;
 }
 
 const QUIZ_TIME_SECONDS = 15;
 
-const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComplete, isBonusRound }) => {
+const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComplete, isBonusRound, onTimerChange }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [modalInfo, setModalInfo] = useState<{ status: 'success' | 'failed' | 'times_up', isCorrect: boolean } | null>(null);
   const [timeLeft, setTimeLeft] = useState(QUIZ_TIME_SECONDS);
 
-  const teamName = playingTeam === Team.A ? 'Blue Team' : 'Red Team';
+  const teamName = playingTeam === Team.A ? 'Team A' : 'Team B';
   const timerRef = useRef<number | null>(null);
   
   const stopTimer = () => {
@@ -41,6 +42,13 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
 
     return () => stopTimer();
   }, []);
+
+  // 타이머 값이 변경될 때마다 부모 컴포넌트에 알림
+  useEffect(() => {
+    if (onTimerChange) {
+      onTimerChange(timeLeft);
+    }
+  }, [timeLeft, onTimerChange]);
 
   const handleAnswer = (option: string) => {
     if (answered) return;

@@ -12,6 +12,7 @@ interface DrawingActivityProps {
   isBonusRound: boolean;
   gameMode: GameMode;
   isPaused: boolean;
+  onTimerChange?: (timeLeft: number) => void;
 }
 
 interface RawResult {
@@ -41,7 +42,7 @@ const speakWord = (word: string) => {
 };
 
 
-const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused }) => {
+const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange }) => {
   const [teamADone, setTeamADone] = useState(false);
   const [teamBDone, setTeamBDone] = useState(false);
   const [teamARawResult, setTeamARawResult] = useState<RawResult | null>(null);
@@ -81,23 +82,31 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         if (gameMode === GameMode.DRAW) {
           setIsScoring(true);
           
-          const scoringPromises: Promise<number>[] = [];
+          const scoringPromises: Promise<boolean>[] = [];
 
           if (teamARawResult.hasDrawn) {
             scoringPromises.push(recognizeHandwriting(roundData.word, teamARawResult.canvasDataUrl));
           } else {
-            scoringPromises.push(Promise.resolve(0));
+            scoringPromises.push(Promise.resolve(false));
           }
 
           if (teamBRawResult.hasDrawn) {
             scoringPromises.push(recognizeHandwriting(roundData.word, teamBRawResult.canvasDataUrl));
           } else {
-            scoringPromises.push(Promise.resolve(0));
+            scoringPromises.push(Promise.resolve(false));
           }
           
-          const [a, b] = await Promise.all(scoringPromises);
-          finalAccuracyA = a;
-          finalAccuracyB = b;
+          const [teamACorrect, teamBCorrect] = await Promise.all(scoringPromises);
+          
+          // 맞음/틀림 결과를 정확도로 변환 (맞음: 100, 틀림: 0)
+          finalAccuracyA = teamACorrect ? 100 : 0;
+          finalAccuracyB = teamBCorrect ? 100 : 0;
+          
+          // 디버깅을 위한 로그 출력
+          console.log(`채점 결과 - 단어: "${roundData.word}"`);
+          console.log(`Team A: ${teamACorrect ? '맞음' : '틀림'} (그림 여부: ${teamARawResult.hasDrawn})`);
+          console.log(`Team B: ${teamBCorrect ? '맞음' : '틀림'} (그림 여부: ${teamBRawResult.hasDrawn})`);
+          
           setIsScoring(false);
         }
 
@@ -108,13 +117,20 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         
         const teamAResult = results.find(r => r.team === Team.A)!;
         const teamBResult = results.find(r => r.team === Team.B)!;
-        const CORRECT_SPELLING_THRESHOLD = 10;
+        const CORRECT_SPELLING_THRESHOLD = 30;
         const teamASuccess = gameMode === GameMode.TRACE 
           ? teamAResult.hasDrawn 
           : teamAResult.accuracy > CORRECT_SPELLING_THRESHOLD;
         const teamBSuccess = gameMode === GameMode.TRACE
           ? teamBResult.hasDrawn
           : teamBResult.accuracy > CORRECT_SPELLING_THRESHOLD;
+          
+        // 성공/실패 판정 로그
+        if (gameMode === GameMode.DRAW) {
+          console.log(`최종 판정:`);
+          console.log(`Team A: ${teamASuccess ? '성공' : '실패'} (${teamAResult.accuracy === 100 ? '맞음' : '틀림'})`);
+          console.log(`Team B: ${teamBSuccess ? '성공' : '실패'} (${teamBResult.accuracy === 100 ? '맞음' : '틀림'})`);
+        }
 
         let tracingWinner: Team | null = null;
         if (teamASuccess && !teamBSuccess) {
@@ -154,17 +170,17 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   }
 
   return (
-    <div className="flex flex-col items-center justify-start h-full pt-20 animate-fade-in">
+    <div className="flex flex-col items-center justify-start h-full pt-4 pb-8 animate-fade-in overflow-auto">
       
       {isBonusRound && (
-        <div className="absolute top-28 flex items-center gap-4 px-6 py-2 bg-yellow-400 text-slate-900 rounded-full shadow-lg animate-bounce z-20">
+        <div className="flex items-center gap-4 px-6 py-2 bg-yellow-400 text-slate-900 rounded-full shadow-lg animate-bounce z-20 mb-4">
           <StarIcon className="w-8 h-8"/>
           <h2 className="text-3xl font-display">DOUBLE POINTS!</h2>
           <StarIcon className="w-8 h-8"/>
         </div>
       )}
 
-      <div className="flex flex-col items-center justify-center gap-2 mb-4 h-48">
+      <div className="flex flex-col items-center justify-center gap-2 mb-6">
         {roundData.wordImage && (
             <div 
               className="bg-slate-100 p-2 rounded-2xl shadow-lg cursor-pointer transition-transform hover:scale-110 active:scale-100"
@@ -173,18 +189,17 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
               aria-label={`Hear the word: ${roundData.word}`}
               tabIndex={0}
             >
-                <img src={roundData.wordImage} alt={gameMode === GameMode.TRACE ? roundData.word : 'Guess the word'} className="w-40 h-40 object-contain rounded-xl" />
+                <img src={roundData.wordImage} alt={gameMode === GameMode.TRACE ? roundData.word : 'Guess the word'} className="w-32 h-32 object-contain rounded-xl" />
             </div>
         )}
-        <p className="text-2xl text-secondary-text font-bold">
+        <p className="text-xl text-secondary-text font-bold">
           {gameMode === GameMode.DRAW ? 'What is this? Write the word!' : ''}
         </p>
       </div>
       
-      <div className="flex w-full justify-around items-start">
-        {/* Blue Team */}
-        <div className={`flex flex-col items-center p-4 rounded-2xl transition-opacity duration-500 ${teamADone ? 'opacity-50' : ''}`}>
-          <h3 className="mb-4 text-4xl font-display text-team-a">Blue Team</h3>
+      <div className="flex w-full justify-around items-center gap-8 px-4 flex-1 min-h-0">
+        {/* Team A */}
+        <div className={`flex flex-col items-center transition-opacity duration-500 ${teamADone ? 'opacity-50' : ''}`}>
           <DrawingCanvas 
             word={roundData.word} 
             strokeColor="#3b82f6" 
@@ -192,12 +207,12 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
             mode={gameMode}
             isPaused={isPaused || showResultModal}
             startAtMs={roundStartAtMs}
+            onTimerChange={onTimerChange}
           />
         </div>
 
-        {/* Red Team */}
-        <div className={`flex flex-col items-center p-4 rounded-2xl transition-opacity duration-500 ${teamBDone ? 'opacity-50' : ''}`}>
-          <h3 className="mb-4 text-4xl font-display text-team-b">Red Team</h3>
+        {/* Team B */}
+        <div className={`flex flex-col items-center transition-opacity duration-500 ${teamBDone ? 'opacity-50' : ''}`}>
           <DrawingCanvas 
             word={roundData.word} 
             strokeColor="#ef4444" 
@@ -205,6 +220,7 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
             mode={gameMode}
             isPaused={isPaused || showResultModal}
             startAtMs={roundStartAtMs}
+            onTimerChange={onTimerChange}
           />
         </div>
       </div>

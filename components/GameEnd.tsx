@@ -16,7 +16,7 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
     if (winner === Team.A) {
       return (
         <div className="flex items-center flex-col text-team-a">
-          <h2 className="text-8xl font-display">Blue Team Wins!</h2>
+          <h2 className="text-8xl font-display">Team A Wins!</h2>
           <p className="text-3xl mt-2">Congratulations!</p>
         </div>
       );
@@ -24,7 +24,7 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
     if (winner === Team.B) {
       return (
         <div className="flex items-center flex-col text-team-b">
-          <h2 className="text-8xl font-display">Red Team Wins!</h2>
+          <h2 className="text-8xl font-display">Team B Wins!</h2>
           <p className="text-3xl mt-2">Congratulations!</p>
         </div>
       );
@@ -44,12 +44,12 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
 
       <div className="flex justify-around w-full mt-12">
         <div className="flex flex-col items-center">
-            <h3 className="text-5xl font-display text-team-a">Blue Team</h3>
+            <h3 className="text-5xl font-display text-team-a">Team A</h3>
             <p className="text-9xl font-display my-2">{scores[Team.A]}</p>
             <p className="text-3xl">Points</p>
         </div>
         <div className="flex flex-col items-center">
-            <h3 className="text-5xl font-display text-team-b">Red Team</h3>
+            <h3 className="text-5xl font-display text-team-b">Team B</h3>
             <p className="text-9xl font-display my-2">{scores[Team.B]}</p>
             <p className="text-3xl">Points</p>
         </div>

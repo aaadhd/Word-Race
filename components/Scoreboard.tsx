@@ -13,7 +13,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ scores, currentRound, totalRoun
   return (
     <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 bg-white/50 z-10 backdrop-blur-sm">
       <div className="flex items-center gap-4 p-2 pl-4 text-3xl font-bold text-white bg-team-a rounded-r-full">
-        <span className="font-display">Blue Team</span>
+        <span className="font-display">Team A</span>
         <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
           <StarIcon className="w-8 h-8 text-yellow-300" />
           <span>{scores[Team.A]}</span>
@@ -31,7 +31,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ scores, currentRound, totalRoun
           <StarIcon className="w-8 h-8 text-yellow-300" />
           <span>{scores[Team.B]}</span>
         </div>
-        <span className="font-display">Red Team</span>
+        <span className="font-display">Team B</span>
       </div>
     </div>
   );

@@ -12,57 +12,93 @@ import type { RoundData } from '../types.ts';
  */
 export const roundDataDB: RoundData[] = [
   {
-    word: 'apple',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjYwIiByPSIzMCIgZmlsbD0icmVkIi8+PHBhdGggZD0iTTUwIDMwIFEgNjAgMjAgNzAgMzAiIHN0cm9rZT0iZ3JlZW4iIHN0cm9keS13aWR0aD0iNSIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
+    word: 'dog',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZWxsaXBzZSBjeD0iNTAiIGN5PSI1NSIgcng9IjM1IiByeT0iMjUiIGZpbGw9IiNmZGE0NjEiLz48ZWxsaXBzZSBjeD0iMzUiIGN5PSI0MCIgcng9IjEwIiByeT0iMTUiIGZpbGw9IiNmZGE0NjEiLz48ZWxsaXBzZSBjeD0iNjUiIGN5PSI0MCIgcng9IjEwIiByeT0iMTUiIGZpbGw9IiNmZGE0NjEiLz48Y2lyY2xlIGN4PSIzNSIgY3k9IjM1IiByPSI0IiBmaWxsPSJibGFjayIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iMzUiIHI9IjQiIGZpbGw9ImJsYWNrIi8+PGVsbGlwc2UgY3g9IjUwIiBjeT0iNjUiIHJ4PSI4IiByeT0iMTIiIGZpbGw9IiNmZGE0NjEiLz48cGF0aCBkPSJNMjAgMjAgUSAxMCAxMCAyMCA1IEwgMzAgMTAiIHN0cm9rZT0iI2ZkYTQ2MSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTgwIDIwIFEgOTAgMTAgODAgNSBMIDcwIDEwIiBzdHJva2U9IiNmZGE0NjEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCA4MCBRIDUgOTAgMTAgOTUgTCAyMCA5MCIgc3Ryb2tlPSIjZmRhNDYxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNOTAgODAgUSA5NSA5MCA5MCA5NSBMIDgwIDkwIiBzdHJva2U9IiNmZGE0NjEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
     quiz: {
-      question: 'Which of these grows on a tree?',
-      options: ['Apple', 'Carrot', 'Fish', 'Stone'],
-      correctAnswer: 'Apple',
+      question: 'Which animal is a pet and says "woof"?',
+      options: ['Cat', 'Dog', 'Bird', 'Fish'],
+      correctAnswer: 'Dog',
     },
   },
   {
-    word: 'cat',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0iZ3JheSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNDAiIHI9IjUiIGZpbGw9ImJsYWNrIi8+PGNpcmNsZSBjeD0iNjUiIGN5PSI0MCIgcj0iNSIgZmlsbD0iYmxhY2siLz48cGF0aCBkPSJNNDAgNjAgUSA1MCA3MCA2MCA2MCIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTIwIDIwIEwgMzUgMzUgTTgwIDIwIEwgNjUgMzUiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
+    word: 'house',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIyMCIgeT0iNDAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzg5YzNmNCIvPjxwb2x5Z29uIHBvaW50cz0iMTAsNDAgNTAsMTAgOTAsNDAiIGZpbGw9IiNmZjY2NjYiLz48cmVjdCB4PSI0MCIgeT0iNjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0iIzg0Y2M2OSIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNzAiIHI9IjMiIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB4PSIzNSIgeT0iNDUiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxNSIgZmlsbD0iIzg0Y2M2OSIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iNTIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiLz48L3N2Zz4=',
     quiz: {
-      question: 'Which animal says "meow"?',
-      options: ['Dog', 'Cat', 'Bird', 'Cow'],
-      correctAnswer: 'Cat',
+      question: 'Where do people live?',
+      options: ['House', 'Tree', 'Car', 'Water'],
+      correctAnswer: 'House',
     },
   },
   {
-    word: 'sun',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0ieWVsbG93Ii8+PGxpbmUgeDE9IjUwIiB5MT0iMTAiIHgyPSI1MCIgeTI9IjI1IiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjUwIiB5MT0iNzUiIHgyPSI1MCIgeTI9IjkwIiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjEwIiB5MT0iNTAiIHgyPSIyNSIgeTI9IjUwIiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9Ijc1IiB5MT0iNTAiIHgyPSI5MCIgeTI9IjUwIiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjIxIiB5MT0iMjEiIHgyPSIzMiIgeTI9IjMyIiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjY4IiB5MT0iNjgiIHgyPSI3OSIgeTI9Ijc5IiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjIxIiB5MT0iNzkiIHgyPSIzMiIgeTI9IjY4IiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PGxpbmUgeDE9IjY4IiB5MT0iMzIiIHgyPSI3OSIgeTI9IjIxIiBzdHJva2U9InllbGxvdyIgc3Ryb2tlLXdpZHRoPSI1Ii8+PC9zdmc+',
+    word: 'fish',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZWxsaXBzZSBjeD0iNTAiIGN5PSI1MCIgcng9IjMwIiByeT0iMjAiIGZpbGw9IiMzM2JiZmYiLz48dHJpYW5nbGUgcG9pbnRzPSI4MCw1MCA5NSw0MCA5NSw2MCIgZmlsbD0iIzMzYmJmZiIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iNDUiIHI9IjUiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSI0NSIgcj0iMyIgZmlsbD0iYmxhY2siLz48cGF0aCBkPSJNMjAgNDAgUSAxMCAzMCAyMCAyMCBMIDMwIDMwIiBzdHJva2U9IiMzM2JiZmYiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0yMCA2MCBRIDEwIDcwIDIwIDgwIEwgMzAgNzAiIHN0cm9rZT0iIzMzYmJmZiIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PC9zdmc+',
     quiz: {
-      question: 'What is the big yellow star in the sky during the day?',
-      options: ['Moon', 'Cloud', 'Sun', 'Star'],
-      correctAnswer: 'Sun',
+      question: 'What animal lives in water and has fins?',
+      options: ['Bird', 'Fish', 'Dog', 'Cat'],
+      correctAnswer: 'Fish',
     },
   },
   {
-    word: 'car',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxyZWN0IHg9IjEwIiB5PSIyMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjIwIiBmaWxsPSJibHVlIi8+PHJlY3QgeD0iMjAiIHk9IjEwIiB3aWR0aD0iNjAiIGhlaWdodD0iMjAiIGZpbGw9ImxpZ2h0Ymx1ZSIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iNDUiIHI9IjgiIGZpbGw9ImJsYWNrIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI0NSIgcj0iOCIgZmlsbD0iYmxhY2siLz48L3N2Zz4=',
+    word: 'star',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cG9seWdvbiBwb2ludHM9IjUwLDUgNjAsMzUgOTUsMzUgNzAsNTUgODAsODUgNTAsNjUgMjAsODUgMzAsNTUgNSwzNSA0MCwzNSIgZmlsbD0iI2ZmZGE0MCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+',
     quiz: {
-      question: 'What has wheels and drives on the road?',
-      options: ['Boat', 'Plane', 'Car', 'Train'],
-      correctAnswer: 'Car',
+      question: 'What shines in the night sky?',
+      options: ['Sun', 'Moon', 'Star', 'Cloud'],
+      correctAnswer: 'Star',
     },
   },
   {
-    word: 'balloon',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTIwIj48ZWxsaXBzZSBjeD0iNTAiIGN5PSI1MCIgcng9IjQwIiByeT0iNTAiIGZpbGw9InB1cnBsZSIvPjxwYXRoIGQ9Ik01MCAxMDAgUSA0NSAxMTAgNTAgMTIwIEwgNTAgMTAwIiBzdHJva2U9InB1cnBsZSIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIi8+PC9zdmc+',
+    word: 'tree',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSI0NSIgeT0iNjAiIHdpZHRoPSIxMCIgaGVpZ2h0PSI0MCIgZmlsbD0iIzg0NjM0MyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjI1IiBmaWxsPSIjNGFkNjQwIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSIzNSIgcj0iMTUiIGZpbGw9IiM0YWQ2NDAiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjM1IiByPSIxNSIgZmlsbD0iIzRhZDY0MCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMjUiIHI9IjIwIiBmaWxsPSIjNGFkNjQwIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSI0NSIgcj0iMTIiIGZpbGw9IiM0YWQ2NDAiLz48Y2lyY2xlIGN4PSI2NSIgY3k9IjQ1IiByPSIxMiIgZmlsbD0iIzRhZDY0MCIvPjwvc3ZnPg==',
     quiz: {
-      question: 'What do you fill with air and see at birthday parties?',
-      options: ['Balloon', 'Cake', 'Present', 'Hat'],
-      correctAnswer: 'Balloon',
+      question: 'What grows tall and has green leaves?',
+      options: ['Tree', 'Flower', 'Grass', 'Rock'],
+      correctAnswer: 'Tree',
     },
   },
   {
-    word: 'strawberry',
-    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMjAsNDAgQzIwLDgwIDUwLDEwMCA1MCwxMDAgQzUwLDEwMCA4MCw4MCA4MCw0MCBDODAsMjAgNjAsMTAgNTAsMjAgQzQwLDEwIDIwLDIwIDIwLDQwIFoiIGZpbGw9InJlZCIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iNTAiIHI9IjIiIGZpbGw9InllbGxvdyIvPjxjaXJjbGUgY3g9IjYwIiBjeT0iNTAiIHI9IjIiIGZpbGw9InllbGxvdyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNjUiIHI9IjIiIGZpbGw9InllbGxvdyIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNzUiIHI9IjIiIGZpbGw9InllbGxvdyIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNzUiIHI9IjIiIGZpbGw9InllbGxvdyIvPjxwYXRoIGQ9Ik00MCwxMCBRNTAsMCA2MCwxMCBMIDUwIDIwIFoiIGZpbGw9ImdyZWVuIi8+PC9zdmc+',
+    word: 'bird',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZWxsaXBzZSBjeD0iNDAiIGN5PSI1MCIgcng9IjE1IiByeT0iMTIiIGZpbGw9IiNmZmE1MDAiLz48ZWxsaXBzZSBjeD0iNjAiIGN5PSI0NSIgcng9IjIwIiByeT0iMTAiIGZpbGw9IiNmZmE1MDAiLz48Y2lyY2xlIGN4PSIzNSIgY3k9IjQ1IiByPSI0IiBmaWxsPSJibGFjayIvPjx0cmlhbmdsZSBwb2ludHM9IjMwLDU1IDI1LDUwIDMwLDQ1IiBmaWxsPSIjZmZhNTAwIi8+PHBhdGggZD0iTTIwIDMwIFEgMTAgMjAgMjAgMTAgTCAzMCAyMCIgc3Ryb2tlPSIjZmZhNTAwIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNNjAgMzAgUSA3MCAyMCA2MCAxMCBMIDUwIDIwIiBzdHJva2U9IiNmZmE1MDAiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0zMCA3MCBRIDIwIDgwIDMwIDkwIEwgNDAgODAiIHN0cm9rZT0iI2ZmYTUwMCIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PC9zdmc+',
     quiz: {
-      question: 'Which fruit is red and has seeds on the outside?',
-      options: ['Banana', 'Apple', 'Grape', 'Strawberry'],
-      correctAnswer: 'Strawberry',
+      question: 'What animal can fly and has wings?',
+      options: ['Fish', 'Bird', 'Dog', 'Cat'],
+      correctAnswer: 'Bird',
+    },
+  },
+  {
+    word: 'flower',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIxNSIgZmlsbD0iI2ZmZmYwMCIvPjxwYXRoIGQ9Ik01MCAzNSBRIDQwIDI1IDUwIDE1IFEgNjAgMjUgNTAgMzUiIGZpbGw9IiNmZjY2Y2MiLz48cGF0aCBkPSJNNjUgNTAgUSA3NSA0MCA2NSA0MCBRIDU1IDQwIDY1IDUwIiBmaWxsPSIjZmY2NmNjIi8+PHBhdGggZD0iTTUwIDY1IFEgNjAgNTUgNTAgNDUgUSAzNSA1NSA1MCA2NSIgZmlsbD0iI2ZmNjZjYyIvPjxwYXRoIGQ9Ik0zNSA1MCBRIDI1IDQwIDM1IDQwIFEgNDUgNDAgMzUgNTAiIGZpbGw9IiNmZjY2Y2MiLz48cmVjdCB4PSI0OCIgeT0iNjUiIHdpZHRoPSI0IiBoZWlnaHQ9IjMwIiBmaWxsPSIjOGJjMzQwIi8+PHBhdGggZD0iTTMwIDgwIFEgNDAgNzAgNTAgODAgUSA2MCA3MCA3MCA4MCIgc3Ryb2tlPSIjOGJjMzQwIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz48L3N2Zz4=',
+    quiz: {
+      question: 'What is pretty and grows in gardens?',
+      options: ['Rock', 'Flower', 'Water', 'Sand'],
+      correctAnswer: 'Flower',
+    },
+  },
+  {
+    word: 'cake',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIyMCIgeT0iNjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIzMCIgZmlsbD0iI2ZmYzEwNyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDAiIHI9IjIwIiBmaWxsPSIjZmZmZmZmIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSIzNSIgcj0iMyIgZmlsbD0iI2ZmNjY2NiIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjMiIGZpbGw9IiNmZjY2NjYiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjM1IiByPSIzIiBmaWxsPSIjZmY2NjY2Ii8+PGNpcmNsZSBjeD0iNDUiIGN5PSI0NSIgcj0iMyIgZmlsbD0iI2ZmNjY2NiIvPjxjaXJjbGUgY3g9IjU1IiBjeT0iNDUiIHI9IjMiIGZpbGw9IiNmZjY2NjYiLz48cmVjdCB4PSIzNSIgeT0iNDAiIHdpZHRoPSIzMCIgaGVpZ2h0PSI1IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+',
+    quiz: {
+      question: 'What do you eat on birthdays?',
+      options: ['Cake', 'Soup', 'Salad', 'Bread'],
+      correctAnswer: 'Cake',
+    },
+  },
+  {
+    word: 'book',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIyMCIgeT0iMjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMzMzMzMzIiBzdHJva2Utd2lkdGg9IjMiLz48bGluZSB4MT0iMzAiIHkxPSIzMCIgeDI9IjUwIiB5Mj0iMzAiIHN0cm9rZT0iIzMzMzMzMyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGxpbmUgeDE9IjMwIiB5MT0iNDAiIHgyPSI1MCIgeTI9IjQwIiBzdHJva2U9IiMzMzMzMzMiIHN0cm9rZS13aWR0aD0iMiIvPjxsaW5lIHgxPSIzMCIgeTE9IjUwIiB4Mj0iNTAiIHkyPSI1MCIgc3Ryb2tlPSIjMzMzMzMzIiBzdHJva2Utd2lkdGg9IjIiLz48bGluZSB4MT0iMzAiIHkxPSI2MCIgeDI9IjUwIiB5Mj0iNjAiIHN0cm9rZT0iIzMzMzMzMyIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSIzNSIgcj0iMiIgZmlsbD0iIzMzMzMzMyIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iNDUiIHI9IjIiIGZpbGw9IiMzMzMzMzMiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjU1IiByPSIyIiBmaWxsPSIjMzMzMzMzIi8+PC9zdmc+',
+    quiz: {
+      question: 'What do you read to learn new things?',
+      options: ['Book', 'Phone', 'TV', 'Radio'],
+      correctAnswer: 'Book',
+    },
+  },
+  {
+    word: 'rainbow',
+    wordImage: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMTAgNjAgUSAyMCA0MCAzMCA2MCBRIDQwIDgwIDUwIDYwIFEgNjAgNDAgNzAgNjAgUSA4MCA4MCA5MCA2MCIgc3Ryb2tlPSIjZmYwMDAwIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTAgNjUgUSAyMCA0NSA0MCA2NSBRIDUwIDg1IDYwIDY1IFEgODAgNDUgOTAgNjUiIHN0cm9rZT0iI2ZmODAwMCIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTEwIDcwIFEgMzAgNTAgNDAgNzAgUSA1MCA5MCA2MCA3MCBRIDgwIDUwIDkwIDcwIiBzdHJva2U9IiNmZmZmMDAiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCA3NSBRIDMwIDU1IDQwIDc1IFEgNTAgOTUgNjAgNzUgUSA4MCA1NSA5MCA3NSIgc3Ryb2tlPSIjMDBmZjAwIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTAgODAgUSAyMCA2MCA0MCA4MCBRIDUwIDEwMCA2MCA4MCBRIDgwIDYwIDkwIDgwIiBzdHJva2U9IiMwMDAwZmYiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCA4NSBRIDIwIDY1IDQwIDg1IFEgNTAgMTA1IDYwIDg1IFEgODAgNjUgOTAgODUiIHN0cm9rZT0iIzgwMDBmZiIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PC9zdmc+',
+    quiz: {
+      question: 'What appears in the sky after rain?',
+      options: ['Cloud', 'Rainbow', 'Sun', 'Moon'],
+      correctAnswer: 'Rainbow',
     },
   },
 ];

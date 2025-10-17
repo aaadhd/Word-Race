@@ -21,10 +21,11 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
   const teamAResult = results.find(r => r.team === Team.A);
   const teamBResult = results.find(r => r.team === Team.B);
 
-  const teamASpelledCorrectly = teamAResult ? teamAResult.accuracy > CORRECT_SPELLING_THRESHOLD : false;
-  const teamBSpelledCorrectly = teamBResult ? teamBResult.accuracy > CORRECT_SPELLING_THRESHOLD : false;
+  // draw 모드에서는 100점이 맞음, 0점이 틀림
+  const teamASpelledCorrectly = teamAResult ? (gameMode === GameMode.DRAW ? teamAResult.accuracy === 100 : teamAResult.accuracy > CORRECT_SPELLING_THRESHOLD) : false;
+  const teamBSpelledCorrectly = teamBResult ? (gameMode === GameMode.DRAW ? teamBResult.accuracy === 100 : teamBResult.accuracy > CORRECT_SPELLING_THRESHOLD) : false;
 
-  const showAccuracy = gameMode === GameMode.TRACE || (gameMode === GameMode.DRAW && teamASpelledCorrectly && teamBSpelledCorrectly);
+  const showAccuracy = gameMode === GameMode.TRACE; // draw 모드에서는 항상 O/X 표시
   const bothIncorrectInDrawMode = gameMode === GameMode.DRAW && !teamASpelledCorrectly && !teamBSpelledCorrectly;
 
   useEffect(() => {
@@ -39,7 +40,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
   
   const renderTeamResult = (team: Team, result: TracingResult | undefined, spelledCorrectly: boolean) => {
     const isWinner = winner === team;
-    const teamName = team === Team.A ? 'Blue Team' : 'Red Team';
+    const teamName = team === Team.A ? 'Team A' : 'Team B';
 
     const teamColorClass = team === Team.A ? 'text-team-a' : 'text-team-b';
     const teamBgClass = team === Team.A ? 'bg-team-a/10' : 'bg-team-b/10';
@@ -59,13 +60,11 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
                         <p className="text-2xl font-bold text-secondary-text">Did not draw</p>
                     ) : spelledCorrectly ? (
                         <div className="flex flex-col items-center gap-2 text-correct">
-                            <CheckIcon className="w-12 h-12" />
-                            <p className="text-3xl font-display">Correct!</p>
+                            <p className="text-6xl font-display">O</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-incorrect">
-                            <XIcon className="w-12 h-12" />
-                            <p className="text-3xl font-display">Incorrect</p>
+                            <p className="text-6xl font-display">X</p>
                         </div>
                     )}
                 </div>
@@ -114,7 +113,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
               <div className="flex items-center justify-center gap-4">
                 <StarIcon className="w-10 h-10 text-yellow-400" />
                 <p className={`text-4xl font-display ${winner === Team.A ? 'text-team-a' : 'text-team-b'}`}>
-                  {winner === Team.A ? 'Blue Team' : 'Red Team'} wins the quiz chance!
+                  {winner === Team.A ? 'Team A' : 'Team B'} wins the quiz chance!
                 </p>
                 <StarIcon className="w-10 h-10 text-yellow-400" />
               </div>

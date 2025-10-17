@@ -7,9 +7,19 @@ let ai: GoogleGenAI | null = null;
 try {
   // This will throw a ReferenceError in the browser because `process` is not defined.
   // We catch it so the app can run using local data without crashing.
-  ai = new GoogleGenAI({ apiKey: (process as any).env.API_KEY });
+  const apiKey = (process as any).env.API_KEY || (process as any).env.GEMINI_API_KEY || (process as any).env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyDOlS4DW6Zq0mXl9oCN0YvB_Hu3sWlZKkU";
+  console.log("🔑 API Key Status:", apiKey ? "✅ Found" : "❌ Missing");
+  console.log("🔑 API Key Preview:", apiKey ? `${apiKey.substring(0, 10)}...` : "None");
+  console.log("🔑 Full API Key:", apiKey ? apiKey : "None"); // 디버깅용 전체 키 출력
+  
+  if (apiKey && apiKey !== "YOUR_GEMINI_API_KEY_HERE") {
+    ai = new GoogleGenAI({ apiKey });
+    console.log("🤖 Gemini AI Client: ✅ Initialized successfully");
+  } else {
+    console.warn("🤖 Gemini AI Client: ❌ No valid API key found (using placeholder or empty)");
+  }
 } catch (error) {
-    console.warn("GoogleGenAI could not be initialized. This is expected in a browser environment without an API key. The app will rely on local data. AI features will be disabled.");
+  console.error("🤖 Gemini AI Client: ❌ Initialization failed", error);
 }
 
 // Keep track of used words to avoid repetition within a single game session.
@@ -20,6 +30,43 @@ let usedWords: string[] = [];
  */
 export const resetUsedWords = () => {
   usedWords = [];
+};
+
+/**
+ * Tests the Gemini API connection by making a simple request.
+ * @returns {Promise<boolean>} True if API is working, false otherwise.
+ */
+export const testGeminiConnection = async (): Promise<boolean> => {
+  if (!ai) {
+    console.error("🤖 API Test: ❌ AI client not initialized");
+    return false;
+  }
+
+  try {
+    console.log("🤖 API Test: 🔄 Testing Gemini API connection...");
+    
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: "Say 'API connection successful' in one word.",
+      config: {
+        responseMimeType: "text/plain",
+      },
+    });
+
+    const result = response.text.trim().toLowerCase();
+    console.log("🤖 API Test: ✅ Response received:", result);
+    
+    if (result.includes("successful") || result.includes("success")) {
+      console.log("🤖 API Test: ✅ Connection successful!");
+      return true;
+    } else {
+      console.log("🤖 API Test: ⚠️ Unexpected response:", result);
+      return false;
+    }
+  } catch (error) {
+    console.error("🤖 API Test: ❌ Connection failed:", error);
+    return false;
+  }
 };
 
 /**
@@ -149,23 +196,23 @@ export const fetchRoundData = async (): Promise<RoundData | null> => {
 };
 
 /**
- * Analyzes a handwritten image of a word using Gemini and returns an accuracy score.
+ * Analyzes a handwritten image of a word using Gemini and returns whether it's correct or incorrect.
  * @param {string} word The word the user was supposed to write.
  * @param {string} imageBase64 The base64 encoded PNG image of the handwriting.
- * @returns {Promise<number>} A promise that resolves to an accuracy score from 0 to 100.
+ * @returns {Promise<boolean>} A promise that resolves to true if correct, false if incorrect.
  */
-export const recognizeHandwriting = async (word: string, imageBase64: string): Promise<number> => {
+export const recognizeHandwriting = async (word: string, imageBase64: string): Promise<boolean> => {
   if (!ai) {
-    console.error("Gemini AI client is not initialized. Cannot recognize handwriting.");
-    // Return a random score for local testing without an API key
-    return Math.floor(Math.random() * 31) + 60; // 60-90
+    console.warn("Gemini AI client is not initialized. Returning false for safety.");
+    // API 키가 없을 때는 안전을 위해 틀림으로 처리
+    return false;
   }
 
   // Remove the data URL prefix e.g., "data:image/png;base64,"
   const pureBase64 = imageBase64.split(',')[1];
   if (!pureBase64) {
     console.error("Invalid base64 string provided.");
-    return 0;
+    return false;
   }
 
   try {
@@ -176,17 +223,46 @@ export const recognizeHandwriting = async (word: string, imageBase64: string): P
       },
     };
 
-    const prompt = `This is an image of a 5-7 year old child's attempt to write the word "${word.toUpperCase()}".
+    const prompt = `You are an extremely strict handwriting evaluator for a children's spelling game. 
 
-Please evaluate it based on two criteria, with spelling being the most important:
-1.  **Spelling:** Does the writing correctly spell out the word "${word.toUpperCase()}"? The spelling check should be **case-insensitive**. For example, if the word is "APPLE", then "Apple", "apple", and "aPpLe" are all considered correctly spelled.
-2.  **Handwriting Quality:** How legible and well-formed are the letters for this age group?
+**TARGET WORD: "${word.toLowerCase()}" (${word.length} letters)**
 
-Calculate a final accuracy score from 0 to 100 based on this:
-- If the word is spelled **incorrectly** (e.g., it says "TOMATO" instead of "${word.toUpperCase()}"), the accuracy score must be **10 or less**, regardless of how neat the writing is.
-- If the word is spelled **correctly** (case-insensitive), score the handwriting quality from 50 (messy but recognizable) to 100 (very neat).
+**YOUR TASK:**
+1. Look at the handwritten image
+2. Try to read what word is written
+3. Compare it EXACTLY with "${word.toLowerCase()}"
+4. Be EXTREMELY STRICT - default to INCORRECT unless you are 100% certain
 
-Respond in JSON format with a single key "accuracy" which is a number from 0 to 100.`;
+**STEP-BY-STEP ANALYSIS:**
+1. What do you see written? (be specific)
+2. Can you identify each individual letter?
+3. Does it spell "${word.toLowerCase()}" exactly?
+4. Is it complete (all ${word.length} letters present)?
+
+**ONLY mark as CORRECT if:**
+- You can clearly read a complete word
+- It is exactly "${word.toLowerCase()}" (case-insensitive)
+- All ${word.length} letters are present and recognizable
+- The spelling is 100% correct
+
+**Mark as INCORRECT if:**
+- You see random lines, scribbles, or shapes
+- The word is incomplete or missing letters
+- The word is different from "${word.toLowerCase()}"
+- You cannot clearly identify what is written
+- Only partial letters are visible
+- It's unreadable or illegible
+- You have ANY doubt about what is written
+
+**CRITICAL: When in doubt, mark as INCORRECT. This is a spelling game - only perfect matches count.**
+
+Analyze the image and respond with:
+{
+  "written_word": "the exact word you see written (or 'unreadable')",
+  "letter_count": exact number of letters you can identify,
+  "word_match": true only if it exactly matches "${word.toLowerCase()}",
+  "correct": true only if written_word exactly matches "${word.toLowerCase()}"
+}`;
     
     const textPart = { text: prompt };
 
@@ -198,28 +274,91 @@ Respond in JSON format with a single key "accuracy" which is a number from 0 to 
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            accuracy: { 
-              type: Type.NUMBER, 
-              description: 'A score from 0 to 100 representing handwriting accuracy, prioritizing spelling.'
+            written_word: {
+              type: Type.STRING,
+              description: 'The exact word written in the image, or "unreadable" if illegible.'
+            },
+            letter_count: {
+              type: Type.NUMBER,
+              description: 'Exact number of letters that can be identified.'
+            },
+            word_match: {
+              type: Type.BOOLEAN,
+              description: 'True only if written_word exactly matches the target word.'
+            },
+            correct: { 
+              type: Type.BOOLEAN, 
+              description: 'True only if written_word exactly matches the target word.'
             },
           },
-          required: ['accuracy']
+          required: ['written_word', 'letter_count', 'word_match', 'correct']
         },
       },
     });
 
     const resultJson = JSON.parse(response.text);
-    const accuracy = resultJson.accuracy;
+    const writtenWord = resultJson.written_word;
+    const letterCount = resultJson.letter_count;
+    const wordMatch = resultJson.word_match;
+    const correct = resultJson.correct;
 
-    if (typeof accuracy === 'number' && accuracy >= 0 && accuracy <= 100) {
-      return Math.round(accuracy);
+    console.log(`AI 분석 결과:`);
+    console.log(`- 목표 단어: "${word.toLowerCase()}" (${word.length}글자)`);
+    console.log(`- 인식된 단어: "${writtenWord}" (${letterCount}글자)`);
+    console.log(`- 단어 일치: ${wordMatch}`);
+    console.log(`- AI 판정: ${correct}`);
+
+    // 다중 검증 로직 (개선된 버전)
+    if (typeof correct === 'boolean' && typeof letterCount === 'number' && typeof wordMatch === 'boolean') {
+      // 1. 인식된 단어가 unreadable이면 틀림
+      if (writtenWord.toLowerCase() === 'unreadable' || writtenWord.toLowerCase() === 'illegible') {
+        console.log(`결과: 틀림 (읽을 수 없음)`);
+        return false;
+      }
+
+      // 2. 글자 수가 너무 부족하면 틀림 (50% 미만)
+      if (letterCount < Math.floor(word.length * 0.5)) {
+        console.log(`결과: 틀림 (글자 수 너무 부족: ${letterCount} < ${Math.floor(word.length * 0.5)})`);
+        return false;
+      }
+
+      // 3. 인식된 단어와 목표 단어 직접 비교 (대소문자 무시)
+      const recognizedWordLower = writtenWord.toLowerCase().trim();
+      const targetWordLower = word.toLowerCase().trim();
+      
+      if (recognizedWordLower === targetWordLower) {
+        console.log(`결과: 맞음 (직접 비교 일치: "${recognizedWordLower}" === "${targetWordLower}")`);
+        return true;
+      }
+
+      // 4. AI의 판정을 참고하되, 직접 비교가 더 우선
+      if (correct) {
+        console.log(`결과: 맞음 (AI 판정 + 직접 비교 통과)`);
+        return true;
+      }
+
+      // 5. 모든 검증을 통과하지 못한 경우
+      console.log(`결과: 틀림 (검증 실패 - 인식: "${recognizedWordLower}", 목표: "${targetWordLower}")`);
+      return false;
     } else {
-      console.error("AI returned invalid accuracy score:", accuracy);
-      return 0;
+      console.error("AI returned invalid result:", { writtenWord, letterCount, wordMatch, correct });
+      return false;
     }
 
   } catch (error) {
-    console.error("Error recognizing handwriting with AI:", error);
-    return 0; // Return 0 on error
+    console.warn("Error recognizing handwriting with AI:", error);
+    
+    // 쿼터 초과 오류 감지
+    if (error && typeof error === 'object' && 'message' in error) {
+      const errorMessage = (error as any).message;
+      if (errorMessage.includes('429') || errorMessage.includes('Quota exceeded')) {
+        console.warn("⚠️ Gemini API 쿼터가 초과되었습니다. 임시로 관대한 채점을 적용합니다.");
+        // 쿼터 초과 시에는 그림을 그렸다면 맞음으로 처리 (임시)
+        return true;
+      }
+    }
+    
+    // 기타 오류 시 안전을 위해 틀림으로 처리
+    return false;
   }
 };

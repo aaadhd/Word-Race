@@ -33,31 +33,31 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
+    <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in py-8 overflow-y-auto">
       {winner && <Confetti />}
-      <h1 className="text-6xl font-display text-primary-text mb-8">Game Over!</h1>
-      <div className="flex items-center justify-center gap-8 p-8 bg-sky-100/50 rounded-2xl">
-        <StarIcon className="w-24 h-24 text-yellow-400 animate-pulse" />
+      <h1 className="text-5xl font-display text-primary-text mb-6">Game Over!</h1>
+      <div className="flex items-center justify-center gap-6 p-6 bg-sky-100/50 rounded-2xl">
+        <StarIcon className="w-20 h-20 text-yellow-400 animate-pulse" />
         {winnerMessage()}
-        <StarIcon className="w-24 h-24 text-yellow-400 animate-pulse" />
+        <StarIcon className="w-20 h-20 text-yellow-400 animate-pulse" />
       </div>
 
-      <div className="flex justify-around w-full mt-12">
+      <div className="flex justify-around w-full mt-8 mb-8">
         <div className="flex flex-col items-center">
-            <h3 className="text-5xl font-display text-team-a">Team A</h3>
-            <p className="text-9xl font-display my-2">{scores[Team.A]}</p>
-            <p className="text-3xl">Points</p>
+            <h3 className="text-4xl font-display text-team-a">Team A</h3>
+            <p className="text-8xl font-display my-2">{scores[Team.A]}</p>
+            <p className="text-2xl">Points</p>
         </div>
         <div className="flex flex-col items-center">
-            <h3 className="text-5xl font-display text-team-b">Team B</h3>
-            <p className="text-9xl font-display my-2">{scores[Team.B]}</p>
-            <p className="text-3xl">Points</p>
+            <h3 className="text-4xl font-display text-team-b">Team B</h3>
+            <p className="text-8xl font-display my-2">{scores[Team.B]}</p>
+            <p className="text-2xl">Points</p>
         </div>
       </div>
       
       <button 
         onClick={onPlayAgain}
-        className="mt-16 px-16 py-6 text-5xl font-display text-white bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full shadow-2xl hover:scale-105 transition-transform"
+        className="px-16 py-6 text-5xl font-display text-white bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full shadow-2xl hover:scale-105 transition-transform"
       >
         Play Again
       </button>

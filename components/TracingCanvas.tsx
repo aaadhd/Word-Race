@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameMode } from '../types.ts';
+import SpriteAnimation from './SpriteAnimation.tsx';
 
 interface DrawingCanvasProps {
   word: string;
@@ -9,20 +10,22 @@ interface DrawingCanvasProps {
   isPaused: boolean;
   startAtMs: number | null;
   onTimerChange?: (timeLeft: number) => void;
+  currentRound?: number;
+  playAnimation?: boolean;
 }
 
 const TRACING_TIME_SECONDS = 20;
 
 const getFontSize = (length: number): number => {
-    if (length <= 5) return 150;
-    if (length <= 7) return 120;
-    if (length <= 9) return 95;
-    if (length <= 11) return 75;
-    if (length <= 13) return 65;
-    return 55;
+    if (length <= 5) return 120;
+    if (length <= 7) return 96;
+    if (length <= 9) return 76;
+    if (length <= 11) return 60;
+    if (length <= 13) return 52;
+    return 44;
 };
 
-const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs, onTimerChange }) => {
+const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs, onTimerChange, currentRound = 1, playAnimation = false }) => {
   console.log('TracingCanvas - strokeColor:', strokeColor, 'isTeamB:', strokeColor === '#ef4444');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const userCanvasRef = useRef<HTMLCanvasElement | null>(null); // Offscreen canvas for user strokes
@@ -55,38 +58,66 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     }
   }, []);
 
-
   const drawWordTemplate = useCallback((ctx: CanvasRenderingContext2D) => {
     const canvas = ctx.canvas;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Reset context state to prevent any carry-over
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
     const fontSize = getFontSize(word.length);
-    const fontHeight = fontSize * 0.7;
-    const baseline_y = (canvas.height + fontHeight) / 2 - (fontSize * 0.1);
-    const topline_y = baseline_y - fontHeight;
-    const midline_y = baseline_y - (fontHeight / 2);
+    // Use font metrics to get accurate measurements
+    ctx.font = `${fontSize}px "Fredoka One"`;
+    ctx.textBaseline = 'alphabetic';
+    const metrics = ctx.measureText(word);
+    const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+    // Center the text vertically and move down by 5%
+    const baseline_y = canvas.height / 2 + metrics.actualBoundingBoxAscent / 2 + canvas.height * 0.05;
+    
+    // Calculate line spacing based on word length
+    // 1-6 letters: same spacing (129.6px), 7+ letters: decreasing spacing
+    const baseSpacing = 130; // Fixed spacing for 1-6 letters (108px * 1.2)
+    const spacingReduction = 14; // Reduction per character after 6 letters (12px * 1.2)
+    const minSpacing = 72; // Minimum spacing (60px * 1.2)
+    const lineSpacing = word.length <= 6 
+      ? baseSpacing 
+      : Math.max(baseSpacing - ((word.length - 6) * spacingReduction), minSpacing);
+    
+    const topline_y = baseline_y - lineSpacing;
+    const midline_y = baseline_y - lineSpacing / 2;
 
     // Draw guidelines for both modes
-    ctx.strokeStyle = '#e5e7eb'; // gray-200
+    ctx.strokeStyle = '#9ca3af'; // gray-400 (30% darker)
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 3]); // Dotted lines
 
+    // Canvas is 450px wide, center everything in the canvas
+    const canvasCenterX = canvas.width / 2; // Center of canvas (225px)
+
+    // Fixed line length of 400px
+    const lineLength = 400; // Fixed line length
+    const lineMargin = canvasCenterX - lineLength / 2; // Start from center minus half length (25px from left)
+    const lineEndMargin = canvasCenterX + lineLength / 2; // End at center plus half length (425px)
+
     // Baseline
     ctx.beginPath();
-    ctx.moveTo(0, baseline_y);
-    ctx.lineTo(canvas.width, baseline_y);
+    ctx.moveTo(lineMargin, baseline_y);
+    ctx.lineTo(lineEndMargin, baseline_y);
     ctx.stroke();
     
     // Top line
     ctx.beginPath();
-    ctx.moveTo(0, topline_y);
-    ctx.lineTo(canvas.width, topline_y);
+    ctx.moveTo(lineMargin, topline_y);
+    ctx.lineTo(lineEndMargin, topline_y);
     ctx.stroke();
 
     // Mid line
     ctx.beginPath();
-    ctx.moveTo(0, midline_y);
-    ctx.lineTo(canvas.width, midline_y);
+    ctx.moveTo(lineMargin, midline_y);
+    ctx.lineTo(lineEndMargin, midline_y);
     ctx.stroke();
     
     ctx.setLineDash([]); // Reset line dash
@@ -95,10 +126,13 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
         ctx.font = `${fontSize}px "Fredoka One"`;
-        ctx.strokeStyle = '#d1d5db'; // gray-300 for trace guide
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#374151'; // gray-700 (더 진한 색상)
+        ctx.lineWidth = 2; // 더 두꺼운 선
         ctx.setLineDash([1, 5]); // Fine dots for the word
-        ctx.strokeText(word, canvas.width / 2, baseline_y);
+        // Center text at the center of the 3 lines with visual offset adjustment
+        const textCenterX = (lineMargin + lineEndMargin) / 2;
+        const visualOffset = -5; // Adjust this value to visually center the text
+        ctx.strokeText(word, textCenterX + visualOffset, baseline_y);
         ctx.setLineDash([]);
     }
   }, [word, mode]);
@@ -123,17 +157,37 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     
     // Draw the template path on the hidden canvas
     const fontSize = getFontSize(word.length);
-    const fontHeight = fontSize * 0.7;
-    const baseline_y = (canvas.height + fontHeight) / 2 - (fontSize * 0.1);
+    templateCtx.font = `${fontSize}px "Fredoka One"`;
+    templateCtx.textBaseline = 'alphabetic';
+    templateCtx.textAlign = 'center';
+    const metrics = templateCtx.measureText(word);
+    
+    // Use same baseline calculation as drawWordTemplate (moved down by 5%)
+    const baseline_y = canvas.height / 2 + metrics.actualBoundingBoxAscent / 2 + canvas.height * 0.05;
+    
+    // Use same visual offset as in drawWordTemplate
+    const visualOffset = -5;
+    
+    // Use same line spacing calculation as drawWordTemplate
+    const baseSpacing = 130; // Fixed spacing for 1-6 letters (108px * 1.2)
+    const spacingReduction = 14; // Reduction per character after 6 letters (12px * 1.2)
+    const minSpacing = 72; // Minimum spacing (60px * 1.2)
+    const lineSpacing = word.length <= 6 
+      ? baseSpacing 
+      : Math.max(baseSpacing - ((word.length - 6) * spacingReduction), minSpacing);
+    
+    // Use same center calculation as drawWordTemplate
+    const canvasCenterX = canvas.width / 2;
+    const lineLength = 400; // Fixed line length
+    const lineMargin = canvasCenterX - lineLength / 2;
+    const lineEndMargin = canvasCenterX + lineLength / 2;
+    const textCenterX = (lineMargin + lineEndMargin) / 2;
 
     templateCtx.strokeStyle = 'black'; // color doesn't matter, just need alpha
     templateCtx.lineWidth = TEMPLATE_LINE_WIDTH;
     templateCtx.lineCap = 'round';
     templateCtx.lineJoin = 'round';
-    templateCtx.textAlign = 'center';
-    templateCtx.textBaseline = 'alphabetic';
-    templateCtx.font = `${fontSize}px "Fredoka One"`;
-    templateCtx.strokeText(word, canvas.width / 2, baseline_y);
+    templateCtx.strokeText(word, textCenterX + visualOffset, baseline_y);
 
     // Get pixel data from the user-only canvas and the template canvas
     const userData = userCtx.getImageData(0, 0, userCanvas.width, userCanvas.height);
@@ -235,14 +289,25 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     if (!canvas) return;
     const context = canvas.getContext('2d');
     if (!context) return;
+
+    // Draw template (this resets context internally)
     drawWordTemplate(context);
+
     setHasDrawn(false);
 
     // Clear the hidden user canvas
     const userCanvas = userCanvasRef.current;
     if (userCanvas) {
         const userCtx = userCanvas.getContext('2d');
-        userCtx?.clearRect(0, 0, userCanvas.width, userCanvas.height);
+        if (userCtx) {
+            userCtx.clearRect(0, 0, userCanvas.width, userCanvas.height);
+            // Reset user canvas drawing state
+            userCtx.lineWidth = 16;
+            userCtx.lineCap = 'round';
+            userCtx.lineJoin = 'round';
+            userCtx.setLineDash([]);
+            userCtx.strokeStyle = 'black';
+        }
     }
   };
 
@@ -279,6 +344,12 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     // Start path on visible canvas
     const context = canvas.getContext('2d');
     if (context) {
+        // Set user drawing state only when starting to draw
+        context.strokeStyle = strokeColor;
+        context.lineWidth = 16;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.setLineDash([]);
         context.beginPath();
         context.moveTo(x, y);
     }
@@ -288,6 +359,12 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     if(userCanvas) {
         const userCtx = userCanvas.getContext('2d');
         if(userCtx) {
+            // Set user drawing state only when starting to draw
+            userCtx.strokeStyle = 'black';
+            userCtx.lineWidth = 16;
+            userCtx.lineCap = 'round';
+            userCtx.lineJoin = 'round';
+            userCtx.setLineDash([]);
             userCtx.beginPath();
             userCtx.moveTo(x, y);
         }
@@ -321,10 +398,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const context = canvas.getContext('2d');
     if (context) {
         context.lineTo(x, y);
-        context.strokeStyle = strokeColor;
-        context.lineWidth = 16;
-        context.lineCap = 'round';
-        context.lineJoin = 'round';
         context.stroke();
     }
     
@@ -334,10 +407,6 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         const userCtx = userCanvas.getContext('2d');
         if (userCtx) {
             userCtx.lineTo(x, y);
-            userCtx.strokeStyle = 'black'; // Color doesn't matter, only alpha
-            userCtx.lineWidth = 16;
-            userCtx.lineCap = 'round';
-            userCtx.lineJoin = 'round';
             userCtx.stroke();
         }
     }
@@ -365,24 +434,13 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const timerColorClass = timeLeft > 10 ? 'text-green-500' : timeLeft > 5 ? 'text-yellow-500' : 'text-red-500 animate-pulse';
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full relative">
-      {/* 몬스터 배경 이미지 - 각 팀별로 다른 몬스터 */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <img 
-          src={strokeColor === '#3b82f6' ? '/monsterA.png' : '/monsterB.png'}
-          alt={`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} Monster`}
-          className={`w-[1200px] h-[800px] object-contain transform ${strokeColor === '#3b82f6' ? '-translate-y-[calc(10%+46px)] scale-[1.16]' : '-translate-y-[calc(10%+30px)]'}`}
-          onLoad={() => console.log(`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} 몬스터 이미지 로드됨`)}
-          onError={() => console.log(`${strokeColor === '#3b82f6' ? 'Team A' : 'Team B'} 몬스터 이미지 로드 실패`)}
-        />
-      </div>
-      
+    <div className="flex flex-col items-center gap-2 w-full relative">
       <canvas
         ref={canvasRef}
-        width="550"
+        width="450"
         height="300"
-        className="bg-transparent rounded-2xl cursor-crosshair shadow-inner border-2 border-slate-200 relative z-10"
-        style={{ backgroundColor: 'transparent' }}
+        className="bg-transparent rounded-2xl cursor-crosshair relative z-10"
+        style={{ backgroundColor: 'transparent', touchAction: 'none' }}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}
@@ -391,23 +449,24 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
         onTouchCancel={stopDrawing}
-        style={{ touchAction: 'none' }}
       />
       <div className="flex items-center gap-4">
         <button
           onClick={handleClear}
           onTouchStart={handleTouchStart(handleClear)}
           disabled={!hasDrawn || isPaused}
-          className="px-8 py-3 text-2xl font-display text-white bg-red-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-red-600 transition-all transform hover:scale-105"
+          className="px-8 py-3 text-2xl font-display text-white bg-red-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-red-600 transition-all transform hover:scale-105 active:scale-100"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Clear drawing"
         >
           Clear
         </button>
-        <button 
+        <button
           onClick={handleDone}
           onTouchStart={handleTouchStart(handleDone)}
           disabled={!hasDrawn || isPaused}
-          className="px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105"
+          className="px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           Done!
         </button>

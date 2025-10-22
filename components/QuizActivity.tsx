@@ -135,7 +135,14 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
     <>
       {/* 전체 딤 배경 - 퀴즈나 결과 모달이 있을 때 계속 유지 */}
       {(quizResult || !hideQuizModal || showResultModal) && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50">
+        <div
+          className="absolute inset-0 bg-black/70 backdrop-blur-md z-50"
+          style={{
+            willChange: 'opacity',
+            backfaceVisibility: 'hidden',
+            transform: 'translate3d(0, 0, 0)'
+          }}
+        >
           {/* 퀴즈 모달 - 숨김 상태가 아닐 때 표시 */}
           {!hideQuizModal && (
             <div className={`flex justify-center items-center h-full ${quizModalExiting ? 'animate-slide-out' : ''}`}>

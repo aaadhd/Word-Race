@@ -85,8 +85,23 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
 
 
   return (
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-4xl transform transition-all animate-fade-in-up">
+    <div
+      className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in"
+      aria-modal="true"
+      role="dialog"
+      style={{
+        willChange: 'opacity',
+        backfaceVisibility: 'hidden',
+        transform: 'translate3d(0, 0, 0)'
+      }}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-4xl transform transition-all animate-fade-in-up"
+        style={{
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden'
+        }}
+      >
         <h1 className="text-7xl font-display text-accent-yellow drop-shadow-lg">
           {gameMode === GameMode.TRACE ? 'Tracing Result!' : 'Drawing Result!'}
         </h1>

@@ -36,7 +36,14 @@ const QuizResultModal: React.FC<QuizResultModalProps> = ({ status, teamName, poi
   }
 
   return (
-    <div className={`bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all animate-fade-in-up smooth-transition ${isFading ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
+    <div
+      className={`bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all animate-fade-in-up smooth-transition ${isFading ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+      style={{
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
+        transform: isFading ? 'translate3d(0, 0, 0) scale(0.95)' : 'translate3d(0, 0, 0) scale(1)'
+      }}
+    >
       <h2 className={`text-5xl font-display mb-4 ${titleColor}`}>{title}</h2>
       <p className="text-2xl text-secondary-text mb-8 min-h-[32px]">{message}</p>
     </div>

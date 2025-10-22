@@ -59,17 +59,22 @@ const App: React.FC = () => {
   }, []);
 
   const goToNextRound = useCallback(async () => {
-    if (currentRound < totalRounds) {
+    const nextRound = currentRound + 1;
+
+    if (nextRound <= totalRounds) {
         // 다음 라운드 데이터를 먼저 준비
-        setIsBonusRound(Math.random() < 0.25);
+        const newBonus = Math.random() < 0.25;
         const data = await fetchRoundData();
-        
+
         if (data) {
-          // 모든 상태를 동시에 업데이트
-          setCurrentRound(prev => prev + 1);
-          setQuizTaker(null);
-          setRoundData(data);
-          setGameState(GameState.ROUND_START);
+          // requestAnimationFrame을 사용하여 모든 상태를 한 프레임에 업데이트
+          requestAnimationFrame(() => {
+            setIsBonusRound(newBonus);
+            setCurrentRound(nextRound);
+            setQuizTaker(null);
+            setRoundData(data);
+            setGameState(GameState.ROUND_START);
+          });
         } else {
           console.error("Failed to fetch round data. Ending game.");
           setGameState(GameState.GAME_END);
@@ -107,6 +112,10 @@ const App: React.FC = () => {
   };
   
   const handleQuizComplete = async (isCorrect: boolean) => {
+    // 다음 라운드 데이터를 미리 준비
+    const nextRound = currentRound + 1;
+    const shouldContinue = nextRound <= totalRounds;
+
     if (quizTaker) {
         const points = isCorrect ? 2 : 1;
         const finalPoints = isBonusRound ? points * 2 : points;
@@ -116,18 +125,20 @@ const App: React.FC = () => {
             [quizTaker]: prevScores[quizTaker] + finalPoints,
         }));
     }
-    
-    // 다음 라운드 데이터를 미리 준비하고 한 번에 상태 변경
-    if (currentRound < totalRounds) {
-        setIsBonusRound(Math.random() < 0.25);
+
+    if (shouldContinue) {
+        const newBonus = Math.random() < 0.25;
         const data = await fetchRoundData();
-        
+
         if (data) {
-          // 모든 상태를 동시에 업데이트하여 깜박임 방지
-          setCurrentRound(prev => prev + 1);
-          setQuizTaker(null);
-          setRoundData(data);
-          setGameState(GameState.ROUND_START);
+          // requestAnimationFrame을 사용하여 모든 상태를 한 프레임에 업데이트
+          requestAnimationFrame(() => {
+            setIsBonusRound(newBonus);
+            setCurrentRound(nextRound);
+            setQuizTaker(null);
+            setRoundData(data);
+            setGameState(GameState.ROUND_START);
+          });
         } else {
           setGameState(GameState.GAME_END);
         }
@@ -253,6 +264,7 @@ const App: React.FC = () => {
               isPaused={gameState === GameState.ROUND_START || isPaused}
               onTimerChange={handleTracingTimerChange}
               resetActivity={gameState === GameState.ROUND_START}
+              currentRound={currentRound}
             />
             {gameState === GameState.ROUND_START && (
               <RoundStart
@@ -276,13 +288,14 @@ const App: React.FC = () => {
               isPaused={true} // 퀴즈 중에는 게임 일시정지
               onTimerChange={handleTracingTimerChange}
               hideResultModal={true} // 퀴즈 중에는 tracing result 모달 숨김
+              currentRound={currentRound} // 현재 라운드 전달
             />
             {/* 퀴즈 모달을 게임 화면 위에 표시 */}
-            <QuizActivity 
-              quiz={roundData.quiz} 
-              playingTeam={quizTaker} 
-              onComplete={handleQuizComplete} 
-              isBonusRound={isBonusRound} 
+            <QuizActivity
+              quiz={roundData.quiz}
+              playingTeam={quizTaker}
+              onComplete={handleQuizComplete}
+              isBonusRound={isBonusRound}
             />
           </>
         );

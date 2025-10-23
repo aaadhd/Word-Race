@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import type { Teams, Player, TeamColor, DragItem } from '../types';
+import type { Teams, Player, TeamColor, DragItem } from '../types/team-setup-types';
 
+// 재사용 가능한 Team Setup 컴포넌트
 interface TeamSetupScreenProps {
   teams: Teams;
   onShuffle: () => void;
   onStart: () => void;
   onTeamsChange: (teams: Teams) => void;
+  onClose?: () => void; // 모달 닫기 기능 추가
+  title?: string; // 커스터마이징 가능한 제목
+  maxPlayersPerTeam?: number; // 팀당 최대 플레이어 수
+  validationRules?: {
+    minTotalPlayers?: number;
+    maxTeamDifference?: number;
+  };
+  teamNames?: {
+    blue: string;
+    red: string;
+  };
+  buttonTexts?: {
+    shuffle: string;
+    start: string;
+    close?: string;
+  };
 }
 
 interface AlertModalProps {
@@ -15,7 +32,7 @@ interface AlertModalProps {
 
 const AlertModal: React.FC<AlertModalProps> = ({ message, onClose }) => {
   return (
-    <div className="absolute inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
+    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
       <div className="bg-white rounded-2xl shadow-2xl p-10 text-center w-full max-w-lg transform transition-all animate-fade-in-up">
         <div className="text-7xl mb-6">⚠️</div>
         <p className="text-3xl font-display text-primary-text leading-relaxed whitespace-pre-line mb-8">
@@ -138,11 +155,30 @@ const TeamBox: React.FC<TeamBoxProps> = ({
   );
 };
 
-const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onStart, onTeamsChange }) => {
+const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ 
+  teams, 
+  onShuffle, 
+  onStart, 
+  onTeamsChange,
+  onClose,
+  title = "Team Setup",
+  maxPlayersPerTeam = 8,
+  validationRules = {
+    minTotalPlayers: 2,
+    maxTeamDifference: 1
+  },
+  teamNames = {
+    blue: "Team A",
+    red: "Team B"
+  },
+  buttonTexts = {
+    shuffle: "Shuffle Teams",
+    start: "Start Game!",
+    close: "Close"
+  }
+}) => {
   const [draggedItem, setDraggedItem] = useState<DragItem | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  
-  console.log('TeamSetupScreen rendered with teams:', teams);
 
   const handleDragStart = (dragItem: DragItem) => {
     setDraggedItem(dragItem);
@@ -157,26 +193,20 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onS
     const teamBCount = teams.red.length;
     const totalPlayers = teamACount + teamBCount;
 
-    console.log('Start Game clicked!', { teamACount, teamBCount, totalPlayers });
-
-    // 총 플레이어가 2명 미만인 경우
-    if (totalPlayers < 2) {
-      console.log('Not enough players');
-      setAlertMessage('At least 2 players are required\nto start the game.');
+    // 총 플레이어가 최소 요구사항 미만인 경우
+    if (totalPlayers < (validationRules.minTotalPlayers || 2)) {
+      setAlertMessage(`At least ${validationRules.minTotalPlayers || 2} players are required\nto start the game.`);
       return;
     }
 
-    // 팀원 차이가 1명을 초과하는 경우
+    // 팀원 차이가 허용 범위를 초과하는 경우
     const teamDifference = Math.abs(teamACount - teamBCount);
-    console.log('Team difference:', teamDifference);
-    if (teamDifference > 1) {
-      console.log('Team imbalance detected');
-      setAlertMessage('Team size difference\nmust be 1 player or less.');
+    if (teamDifference > (validationRules.maxTeamDifference || 1)) {
+      setAlertMessage(`Team size difference\nmust be ${validationRules.maxTeamDifference || 1} player or less.`);
       return;
     }
 
     // 유효성 검사 통과 시 게임 시작
-    console.log('Starting game...');
     onStart();
   };
 
@@ -198,9 +228,9 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onS
     const playerWithNewTeam = { ...draggedItem.player, team: targetTeam };
     newTeams[targetTeam].splice(targetIndex, 0, playerWithNewTeam);
 
-    // 최대 8명 제한
-    if (newTeams[targetTeam].length > 8) {
-      newTeams[targetTeam] = newTeams[targetTeam].slice(0, 8);
+    // 최대 팀원 수 제한
+    if (newTeams[targetTeam].length > maxPlayersPerTeam) {
+      newTeams[targetTeam] = newTeams[targetTeam].slice(0, maxPlayersPerTeam);
     }
 
     onTeamsChange(newTeams);
@@ -213,13 +243,32 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onS
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-start items-center p-4 pt-16 relative">
+    <div
+      className="w-full h-full flex flex-col justify-start items-center p-4 pt-16 relative"
+      style={{
+        backgroundImage: 'url(/images/background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {alertMessage && <AlertModal message={alertMessage} onClose={handleCloseAlert} />}
+
+      <div className="flex items-center justify-between w-full max-w-6xl mb-16 relative z-10">
+        <h1 className="text-6xl font-display text-accent-yellow drop-shadow-lg">{title}</h1>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="px-6 py-3 text-xl font-display text-white bg-gradient-to-r from-gray-400 to-gray-500 rounded-full shadow-xl hover:scale-105 transition-transform"
+          >
+            {buttonTexts.close}
+          </button>
+        )}
+      </div>
       
-      <h1 className="text-6xl font-display text-accent-yellow drop-shadow-lg mb-16">Team Setup</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
         <TeamBox 
-          title="Team A" 
+          title={teamNames.blue}
           teamColor="blue" 
           players={teams.blue} 
           team="blue"
@@ -229,7 +278,7 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onS
           onDragEnd={handleDragEnd}
         />
         <TeamBox 
-          title="Team B" 
+          title={teamNames.red}
           teamColor="red" 
           players={teams.red} 
           team="red"
@@ -239,21 +288,19 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({ teams, onShuffle, onS
           onDragEnd={handleDragEnd}
         />
       </div>
+      
       <div className="absolute bottom-8 left-8 right-8 flex justify-between">
         <button
           onClick={onShuffle}
           className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full shadow-2xl hover:scale-105 transition-transform"
         >
-          Shuffle Teams
+          {buttonTexts.shuffle}
         </button>
         <button
-          onClick={() => {
-            console.log('Button clicked!');
-            handleStartGame();
-          }}
+          onClick={handleStartGame}
           className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-green-400 to-emerald-500 rounded-full shadow-2xl hover:scale-105 transition-transform"
         >
-          Start Game!
+          {buttonTexts.start}
         </button>
       </div>
     </div>

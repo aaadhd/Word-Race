@@ -1,5 +1,6 @@
 export enum GameState {
   SETUP = 'SETUP',
+  TITLE_SCREEN = 'TITLE_SCREEN',
   TEAM_SETUP = 'TEAM_SETUP',
   ROUND_START = 'ROUND_START',
   TRACING = 'TRACING',

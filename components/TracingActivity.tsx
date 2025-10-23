@@ -16,6 +16,7 @@ interface DrawingActivityProps {
   hideResultModal?: boolean;
   resetActivity?: boolean;
   currentRound?: number;
+  isQuizMode?: boolean; // 퀴즈 모드 여부
 }
 
 interface RawResult {
@@ -45,13 +46,14 @@ const speakWord = (word: string) => {
 };
 
 
-const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false, currentRound = 1 }) => {
+const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false, currentRound = 1, isQuizMode = false }) => {
   console.log('TracingActivity - gameMode received:', gameMode);
-  const alphacaVideoRef = useRef<HTMLVideoElement>(null);
+  const alpacaVideoRef = useRef<HTMLVideoElement>(null);
   const catVideoRef = useRef<HTMLVideoElement>(null);
   const chickVideoRef = useRef<HTMLVideoElement>(null);
   const pandaVideoRef = useRef<HTMLVideoElement>(null);
   const slothVideoRef = useRef<HTMLVideoElement>(null);
+  const koalaVideoRef = useRef<HTMLVideoElement>(null);
   const tigerVideoRef = useRef<HTMLVideoElement>(null);
   const capybaraVideoRef = useRef<HTMLVideoElement>(null);
   const bigcatVideoRef = useRef<HTMLVideoElement>(null);
@@ -97,85 +99,10 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
     setVideoEnded(true);
   }, [currentRound]);
 
-  // 동물 영상 재생 제어 - 현재 라운드에 해당하는 영상만
+  // 비디오 로직 제거 - 이미지만 사용
   useEffect(() => {
-    let currentVideos: HTMLVideoElement[] = [];
-
-    // 현재 라운드에 해당하는 영상만 선택
-    const cycleRound = currentRound <= 4 ? currentRound : ((currentRound - 1) % 4) + 1;
-
-    switch(cycleRound) {
-      case 1:
-        currentVideos = [alphacaVideoRef.current, chickVideoRef.current].filter(Boolean) as HTMLVideoElement[];
-        break;
-      case 2:
-        currentVideos = [pandaVideoRef.current, slothVideoRef.current].filter(Boolean) as HTMLVideoElement[];
-        break;
-      case 3:
-        currentVideos = [catVideoRef.current, tigerVideoRef.current].filter(Boolean) as HTMLVideoElement[];
-        break;
-      case 4:
-        currentVideos = [bigcatVideoRef.current, capybaraVideoRef.current].filter(Boolean) as HTMLVideoElement[];
-        break;
-    }
-
-    // 영상 로딩 상태 관리
-    let loadedCount = 0;
-    const totalVideos = currentVideos.length;
-
-    const checkAllVideosLoaded = () => {
-      loadedCount++;
-      if (loadedCount === totalVideos) {
-        setVideosLoaded(true);
-      }
-    };
-
-    // 현재 라운드 영상 제어
-    currentVideos.forEach(video => {
-      if (!video) return;
-
-      const handleLoadedMetadata = () => {
-        if (video.duration) {
-          if (isPaused && !hideResultModal) {
-            // RoundStart 모달에서는 처음부터 재생
-            video.currentTime = 0;
-          } else {
-            // 게임 중, 퀴즈 중 모두 마지막 프레임으로 이동
-            video.currentTime = video.duration - 0.1;
-          }
-        }
-        checkAllVideosLoaded();
-      };
-
-      const handleCanPlay = () => {
-        checkAllVideosLoaded();
-      };
-
-      video.addEventListener('loadedmetadata', handleLoadedMetadata);
-      video.addEventListener('canplay', handleCanPlay);
-
-      if (isPaused && !hideResultModal) {
-        // RoundStart 모달 화면에서는 재생
-        video.currentTime = 0;
-        video.play().catch(err => console.log('Video play error:', err));
-      } else {
-        // 게임 중, 퀴즈 중 모두 마지막 프레임으로 이동하고 정지
-        if (video.duration) {
-          video.currentTime = video.duration - 0.1;
-        }
-        video.pause();
-      }
-    });
-
-    return () => {
-      currentVideos.forEach(video => {
-        if (video) {
-          video.removeEventListener('loadedmetadata', () => {});
-          video.removeEventListener('canplay', () => {});
-        }
-      });
-    };
-  }, [isPaused, currentRound, hideResultModal]);
+    setVideosLoaded(true);
+  }, [currentRound]);
 
   const handleTeamADone = (hasDrawn: boolean, accuracy: number, canvasDataUrl: string) => {
     if (teamADone) return;
@@ -294,7 +221,7 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
 
   return (
     <div
-      className="relative h-full overflow-auto"
+      className="relative w-full h-full overflow-hidden"
       style={{
         willChange: 'opacity',
         backfaceVisibility: 'hidden',
@@ -303,96 +230,56 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         transition: 'opacity 0.3s ease-in-out'
       }}
     >
-      {/* 전체 라운드 배경 이미지 */}
-      <div 
-        className="absolute inset-0 -z-20"
-        style={{
-          backgroundImage: 'url(/images/background.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      />
+      {/* 전체 라운드 배경 이미지 - 라운드 시작 상태가 아닐 때만 표시 */}
+      {!isPaused || isQuizMode ? (
+        <div 
+          className="absolute inset-0 -z-20"
+          style={{
+            backgroundImage: 'url(/images/background.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      ) : null}
       
        {/* 동물 영상/이미지 레이어 - 현재 라운드에 맞는 영상만 렌더링 */}
        {/* Round 1 or 5, 9, 13... */}
        {cycleRound === 1 && (
         <>
-          {/* 왼쪽 (Team A) - alphaca */}
+          {/* 왼쪽 (Team A) - alpaca */}
           <div className="absolute left-0 w-1/2 flex items-end justify-start pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={alphacaVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.1)',
-                  transformOrigin: 'left center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/alphaca.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/alphaca.png"
-                alt="alphaca"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.1)',
-                  transformOrigin: 'left center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/alpaca.png"
+              alt="alpaca"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'left bottom',
+                transform: 'translate3d(0, 0, 0) scaleX(1.1)',
+                transformOrigin: 'left center',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
           {/* 오른쪽 (Team B) - chick */}
           <div className="absolute right-0 w-1/2 flex items-end justify-end pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={chickVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.07)',
-                  transformOrigin: 'right center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/chick.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/chick.png"
-                alt="chick"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.07)',
-                  transformOrigin: 'right center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/chick.png"
+              alt="chick"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'right bottom',
+                transform: 'translate3d(0, 0, 0) scaleX(1.07)',
+                transformOrigin: 'right center',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
         </>
       )}
@@ -402,77 +289,37 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         <>
           {/* 왼쪽 (Team A) - panda */}
           <div className="absolute left-0 w-1/2 flex items-end justify-start pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={pandaVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/panda.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/panda.png"
-                alt="panda"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/panda.png"
+              alt="panda"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'left bottom',
+                transform: 'translate3d(2%, -2%, 0) scaleX(0.95)',
+                transformOrigin: 'left center',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
           {/* 오른쪽 (Team B) - sloth */}
           <div className="absolute right-0 w-1/2 flex items-end justify-end pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={slothVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.05)',
-                  transformOrigin: 'right center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/sloth.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/sloth.png"
-                alt="sloth"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0) scaleX(1.05)',
-                  transformOrigin: 'right center',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/sloth.png"
+              alt="sloth"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'right bottom',
+                transform: 'translate3d(-3%, 0, 0) scaleX(1.05)',
+                transformOrigin: 'right center',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
         </>
       )}
@@ -480,77 +327,37 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
        {/* Round 3 or 7, 11, 15... */}
        {cycleRound === 3 && (
         <>
-          {/* 왼쪽 (Team A) - cat */}
+          {/* 왼쪽 (Team A) - koala */}
           <div className="absolute left-0 w-1/2 flex items-end justify-start pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={catVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/cat.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/cat.png"
-                alt="cat"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'left bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/koala.png"
+              alt="koala"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'left bottom',
+                transform: 'translate3d(3%, 0, 0)',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
           {/* 오른쪽 (Team B) - tiger */}
           <div className="absolute right-0 w-1/2 flex items-end justify-end pointer-events-none z-0" style={{ bottom: '-2%' }}>
-            {isPaused && !hideResultModal ? (
-              <video
-                ref={tigerVideoRef}
-                muted
-                playsInline
-                preload="auto"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              >
-                <source src="/videos/tiger.mp4" type="video/mp4" />
-              </video>
-            ) : (
-              <img
-                src="/images/tiger.png"
-                alt="tiger"
-                className="w-auto"
-                style={{
-                  height: '740px',
-                  objectFit: 'contain',
-                  objectPosition: 'right bottom',
-                  transform: 'translate3d(0, 0, 0)',
-                  willChange: 'auto',
-                  backfaceVisibility: 'hidden'
-                }}
-              />
-            )}
+            <img
+              src="/images/tiger.png"
+              alt="tiger"
+              className="w-auto"
+              style={{
+                height: '740px',
+                objectFit: 'contain',
+                objectPosition: 'right bottom',
+                transform: 'translate3d(-3%, 0, 0)',
+                willChange: 'auto',
+                backfaceVisibility: 'hidden'
+              }}
+            />
           </div>
         </>
       )}
@@ -560,79 +367,37 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
          <>
            {/* 왼쪽 (Team A) - bigcat */}
            <div className="absolute left-0 w-1/2 flex items-end justify-start pointer-events-none z-0" style={{ bottom: '-2%' }}>
-             {isPaused && !hideResultModal ? (
-               <video
-                 ref={bigcatVideoRef}
-                 muted
-                 playsInline
-                 preload="auto"
-                 className="w-auto"
-                 style={{
-                   height: '760px',
-                   objectFit: 'contain',
-                   objectPosition: 'left bottom',
-                   transform: 'translate3d(0, 0, 0) scaleX(0.95)',
-                   transformOrigin: 'left center',
-                   willChange: 'auto',
-                   backfaceVisibility: 'hidden'
-                 }}
-               >
-                 <source src="/videos/bigcat.mp4" type="video/mp4" />
-               </video>
-             ) : (
-               <img
-                 src="/images/bigcat.png"
-                 alt="bigcat"
-                 className="w-auto"
-                 style={{
-                   height: '760px',
-                   objectFit: 'contain',
-                   objectPosition: 'left bottom',
-                   transform: 'translate3d(0, 0, 0) scaleX(0.95)',
-                   transformOrigin: 'left center',
-                   willChange: 'auto',
-                   backfaceVisibility: 'hidden'
-                 }}
-               />
-             )}
+             <img
+               src="/images/bigcat.png"
+               alt="bigcat"
+               className="w-auto"
+               style={{
+                 height: '760px',
+                 objectFit: 'contain',
+                 objectPosition: 'left bottom',
+                 transform: 'translate3d(0, 0, 0) scaleX(0.95)',
+                 transformOrigin: 'left center',
+                 willChange: 'auto',
+                 backfaceVisibility: 'hidden'
+               }}
+             />
            </div>
            {/* 오른쪽 (Team B) - capybara */}
            <div className="absolute right-0 w-1/2 flex items-end justify-end pointer-events-none z-0" style={{ bottom: '-2%' }}>
-             {isPaused && !hideResultModal ? (
-               <video
-                 ref={capybaraVideoRef}
-                 muted
-                 playsInline
-                 preload="auto"
-                 className="w-auto"
-                 style={{
-                   height: '760px',
-                   objectFit: 'contain',
-                   objectPosition: 'right bottom',
-                   transform: 'translate3d(0, 0, 0) scaleX(0.95)',
-                   transformOrigin: 'right center',
-                   willChange: 'auto',
-                   backfaceVisibility: 'hidden'
-                 }}
-               >
-                 <source src="/videos/capybara.mp4" type="video/mp4" />
-               </video>
-             ) : (
-               <img
-                 src="/images/capybara.png"
-                 alt="capybara"
-                 className="w-auto"
-                 style={{
-                   height: '760px',
-                   objectFit: 'contain',
-                   objectPosition: 'right bottom',
-                   transform: 'translate3d(0, 0, 0) scaleX(0.95)',
-                   transformOrigin: 'right center',
-                   willChange: 'auto',
-                   backfaceVisibility: 'hidden'
-                 }}
-               />
-             )}
+             <img
+               src="/images/capybara.png"
+               alt="capybara"
+               className="w-auto"
+               style={{
+                 height: '760px',
+                 objectFit: 'contain',
+                 objectPosition: 'right bottom',
+                 transform: 'translate3d(0, 0, 0) scaleX(0.95)',
+                 transformOrigin: 'right center',
+                 willChange: 'auto',
+                 backfaceVisibility: 'hidden'
+               }}
+             />
            </div>
          </>
        )}
@@ -658,10 +423,10 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
       )}
       
       {/* Drawing Canvas Container - 절대 위치 */}
-      {videoEnded && !isPaused && (
+      {videoEnded && (!isPaused || isQuizMode) && (
         <>
           {/* Team A - 왼쪽 영상 영역 중앙 */}
-          <div className={`absolute top-[336px] left-0 w-1/2 flex justify-start items-center transition-opacity duration-500 ${teamADone ? 'opacity-50' : ''}`}>
+          <div className={`absolute top-[336px] left-0 w-1/2 flex justify-start items-center transition-opacity duration-500 z-20`}>
             <div className="flex justify-center items-center" style={{ width: '740px', marginLeft: '0px', transform: 'translateX(-3%)' }}>
               <DrawingCanvas 
                 word={roundData.word} 
@@ -678,7 +443,7 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
           </div>
 
           {/* Team B - 오른쪽 영상 영역 중앙 */}
-          <div className={`absolute top-[336px] right-0 w-1/2 flex justify-end items-center transition-opacity duration-500 ${teamBDone ? 'opacity-50' : ''}`}>
+          <div className={`absolute top-[336px] right-0 w-1/2 flex justify-end items-center transition-opacity duration-500 z-20`}>
             <div className="flex justify-center items-center" style={{ width: '740px', marginRight: '0px', transform: 'translateX(3%)' }}>
               <DrawingCanvas 
                 word={roundData.word} 

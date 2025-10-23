@@ -26,7 +26,6 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
   const [showFeedback, setShowFeedback] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [hideQuizModal, setHideQuizModal] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [feedbackFading, setFeedbackFading] = useState(false);
   const [resultFading, setResultFading] = useState(false);
   const [quizModalExiting, setQuizModalExiting] = useState(false);
@@ -110,7 +109,6 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
       console.log('QuizActivity - 4단계: 결과 모달 종료, 다음 라운드 진행');
       setShowResultModal(false);
       setResultFading(false);
-      setIsTransitioning(true);
       onComplete(quizResult.isCorrect);
     }, RESULT_DISPLAY_TIME);
 
@@ -133,19 +131,12 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
 
   return (
     <>
-      {/* 전체 딤 배경 - 퀴즈나 결과 모달이 있을 때 계속 유지 */}
+      {/* 퀴즈와 결과 모달 (딤 레이어는 App.tsx에서 처리) */}
       {(quizResult || !hideQuizModal || showResultModal) && (
-        <div
-          className="absolute inset-0 bg-black/70 backdrop-blur-md z-50"
-          style={{
-            willChange: 'opacity',
-            backfaceVisibility: 'hidden',
-            transform: 'translate3d(0, 0, 0)'
-          }}
-        >
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
           {/* 퀴즈 모달 - 숨김 상태가 아닐 때 표시 */}
           {!hideQuizModal && (
-            <div className={`flex justify-center items-center h-full ${quizModalExiting ? 'animate-slide-out' : ''}`}>
+            <div className={`${quizModalExiting ? 'animate-slide-out' : ''}`}>
               <QuizPopup
                 quiz={quizData}
                 team={playingTeam === Team.A ? 'A' : 'B'}
@@ -172,12 +163,12 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
               />
             </div>
           )}
-          
-           {/* 점수 결과 모달 - 퀴즈 모달이 숨겨진 후 같은 딤 위에 표시 */}
+
+           {/* 점수 결과 모달 - 퀴즈 모달이 숨겨진 후 표시 */}
            {showResultModal && quizResult && (
-             <div className={`flex items-center justify-center h-full ${resultModalEntering ? 'animate-slide-in' : ''}`}>
+             <div className={`${resultModalEntering ? 'animate-slide-in' : ''}`}>
                {console.log('QuizActivity - 결과 모달 렌더링 중', { showResultModal, quizResult, resultModalEntering })}
-               <QuizResultModal 
+               <QuizResultModal
                  status={quizResult.status}
                  teamName={teamName}
                  points={quizResult.isCorrect ? points.correct : points.incorrect}
@@ -196,15 +187,6 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
         />
       )}
       
-      {/* 전환 중 로딩 표시 */}
-      {isTransitioning && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[75]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-white"></div>
-            <p className="text-2xl font-bold text-white">Next Round...</p>
-          </div>
-        </div>
-      )}
     </>
   );
 };

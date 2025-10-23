@@ -204,11 +204,22 @@
           opacity: 1;
         }
       }
-      
+
       @keyframes scaleIn {
         0% {
           opacity: 0;
           transform: scale(0.8);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes modalAppear {
+        0% {
+          opacity: 0;
+          transform: scale(0.9);
         }
         100% {
           opacity: 1;
@@ -263,8 +274,8 @@
               'sans': ['Nunito', 'sans-serif'],
             },
             colors: {
-              'team-a': '#3b82f6', // blue-500
-              'team-b': '#ef4444', // red-500
+              'team-a': '#00bcd4', // cyan
+              'team-b': '#9956d7', // purple
               'background': '#f0f9ff', // sky-50
               'light-bg': '#ffffff', // white
               'correct': '#22c55e', // green-500

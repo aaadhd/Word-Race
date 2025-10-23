@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface RoundStartProps {
   currentRound: number;
@@ -6,6 +6,33 @@ interface RoundStartProps {
 }
 
 const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
+  const backgroundVideoRef = useRef<HTMLVideoElement>(null);
+
+  // 각 라운드별 배경 비디오 자동 재생
+  useEffect(() => {
+    if (backgroundVideoRef.current) {
+      backgroundVideoRef.current.play().catch(console.error);
+    }
+  }, [currentRound]);
+
+  // 각 라운드별 배경 비디오 소스 반환
+  const getBackgroundVideoSrc = () => {
+    const cycleRound = currentRound <= 4 ? currentRound : ((currentRound - 1) % 4) + 1;
+    
+    switch(cycleRound) {
+      case 1:
+        return '/videos/alpaca_bg.mp4';
+      case 2:
+        return '/videos/panda_bg.mp4';
+      case 3:
+        return '/videos/koala_bg.mp4';
+      case 4:
+        return '/videos/bigcat_bg.mp4';
+      default:
+        return '/videos/alpaca_bg.mp4';
+    }
+  };
+
   const getBackgroundConfig = () => {
     switch(currentRound) {
       case 1:
@@ -81,21 +108,38 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300 ease-out"
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
       aria-modal="true"
       role="dialog"
       style={{
-        animation: 'fadeIn 0.3s ease-out',
         willChange: 'opacity',
         backfaceVisibility: 'hidden',
         transform: 'translate3d(0, 0, 0)'
       }}
     >
-      {/* 딤 레이어 (영상과 모달 사이) - 약간 어둡게 */}
-      <div
-        className="absolute inset-0 bg-black/20 z-10"
+      {/* 각 라운드별 배경 비디오 */}
+      <video
+        ref={backgroundVideoRef}
+        className="absolute"
+        muted
+        playsInline
+        preload="auto"
         style={{
-          animation: 'fadeIn 0.3s ease-out',
+          width: '1280px',
+          height: 'auto',
+          objectFit: 'contain',
+          objectPosition: 'center bottom',
+          left: 0,
+          bottom: 0
+        }}
+      >
+        <source src={getBackgroundVideoSrc()} type="video/mp4" />
+      </video>
+
+      {/* 딤 레이어 (영상과 모달 사이) - 흰색 딤 20% */}
+      <div
+        className="absolute inset-0 bg-white/20"
+        style={{
           willChange: 'opacity',
           backfaceVisibility: 'hidden'
         }}
@@ -103,25 +147,31 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
 
       {/* 콘텐츠 레이어 */}
       <div
-        className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-lg transform transition-all duration-500 ease-out pointer-events-auto z-50 relative"
+        className="bg-gradient-to-br from-yellow-300 via-orange-200 to-pink-300 rounded-3xl shadow-2xl p-6 text-center w-full max-w-xs pointer-events-auto relative border-6 border-white"
         style={{
-          animation: 'scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          opacity: 0,
+          transform: 'scale(0.9)',
+          animation: 'modalAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          animationDelay: '3s',
           willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden'
+          backfaceVisibility: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.1)'
         }}
       >
-        <h1 className="text-6xl font-display text-accent-yellow drop-shadow-md">
-          Round {currentRound} Start!
-        </h1>
-        <p className="mt-4 text-2xl text-secondary-text font-sans">
-          Write it right, write it fast!
-        </p>
-        
-        <button 
+        <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-3 mb-5">
+          <h1 className="text-5xl font-display bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent drop-shadow-lg" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Round {currentRound}
+          </h1>
+        </div>
+
+        <button
           onClick={onStart}
-          className="mt-8 px-12 py-4 text-3xl font-display text-white bg-gradient-to-r from-green-400 to-emerald-500 rounded-full shadow-2xl hover:scale-105 transition-all duration-200 ease-out"
+          className="relative px-10 py-3 text-2xl font-display text-white bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 ease-out border-4 border-white transform hover:rotate-1"
+          style={{
+            boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4), inset 0 -4px 0 rgba(0,0,0,0.1)'
+          }}
         >
-          Ready, Set, Go!
+          <span className="drop-shadow-md">START! 🚀</span>
         </button>
       </div>
     </div>

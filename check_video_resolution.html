@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Resolution Checker</title>
+</head>
+<body>
+    <h1>Video Resolution Checker</h1>
+    <div id="results"></div>
+
+    <script>
+        const videos = [
+            '/videos/alpaca_bg.mp4',
+            '/videos/panda_bg.mp4',
+            '/videos/koala_bg.mp4',
+            '/videos/bigcat_bg.mp4'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+
+        videos.forEach(videoSrc => {
+            const video = document.createElement('video');
+            video.src = videoSrc;
+
+            video.addEventListener('loadedmetadata', function() {
+                const result = document.createElement('p');
+                result.textContent = `${videoSrc}: ${this.videoWidth} x ${this.videoHeight}`;
+                resultsDiv.appendChild(result);
+            });
+        });
+
+        // Also check background.png
+        const img = new Image();
+        img.onload = function() {
+            const result = document.createElement('p');
+            result.textContent = `/images/background.png: ${this.width} x ${this.height}`;
+            resultsDiv.appendChild(result);
+        };
+        img.src = '/images/background.png';
+    </script>
+</body>
+</html>

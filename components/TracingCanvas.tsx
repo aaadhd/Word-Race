@@ -32,6 +32,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TRACING_TIME_SECONDS);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // Initialize the offscreen canvas for user drawings and set up non-passive event listeners
   useEffect(() => {
@@ -74,8 +75,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const metrics = ctx.measureText(word);
     const actualHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
-    // Center the text vertically and move down by 5%
-    const baseline_y = canvas.height / 2 + metrics.actualBoundingBoxAscent / 2 + canvas.height * 0.05;
+    // Center the text vertically, accounting for both ascent and descent
+    const baseline_y = canvas.height / 2 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
     
     // Calculate line spacing based on word length
     // 1-6 letters: same spacing (129.6px), 7+ letters: decreasing spacing
@@ -312,6 +313,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   };
 
   const handleDone = () => {
+    setIsCompleted(true);
     setTimeLeft(0);
     finishAttempt();
   }
@@ -465,7 +467,9 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
           onClick={handleDone}
           onTouchStart={handleTouchStart(handleDone)}
           disabled={!hasDrawn || isPaused}
-          className="px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100"
+          className={`px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100 ${
+            isCompleted ? 'ring-4 ring-yellow-400 ring-opacity-75' : ''
+          }`}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           Done!

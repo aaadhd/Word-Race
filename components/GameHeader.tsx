@@ -36,11 +36,11 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   };
 
   return (
-    <header className="w-full bg-yellow-400 p-3 shadow-md flex justify-between items-center z-50 h-[70px]">
+    <header className="w-full p-3 bg-yellow-400 shadow-md flex justify-between items-center z-50 h-[70px]">
       {/* Left: Title */}
       <div className="w-1/3">
-        <h1 
-          className="text-4xl font-bold text-white" 
+        <h1
+          className="text-4xl font-bold text-white"
           style={{
             fontFamily: "'Luckiest Guy', cursive",
             WebkitTextStroke: '2px #ca8a04',
@@ -54,9 +54,9 @@ const GameHeader: React.FC<GameHeaderProps> = ({
       {/* Center: Round Info or Timer */}
       <div className="w-1/3 flex justify-center items-center">
         {showTimer ? (
-          <div className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-2 shadow-inner border-2 border-yellow-500 flex items-center gap-2">
+          <div className="bg-white/80 backdrop-blur-sm rounded-full px-6 py-2 shadow-inner border-2 border-yellow-500 flex items-center gap-2 h-[48px]">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="#ca8a04" d="M12 20a8 8 0 1 0 0-16a8 8 0 0 0 0 16m0 2a10 10 0 1 1 0-20a10 10 0 0 1 0 20M12.5 7v5.5l4.5 2.5l-.75 1.23l-5.25-3.1V7z"/></svg>
-            <h2 
+            <h2
               className="text-3xl font-bold text-yellow-800"
               style={{ fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif" }}
             >
@@ -64,8 +64,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             </h2>
           </div>
         ) : currentRound && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-full shadow-inner border-2 border-yellow-500 flex items-center justify-center" style={{ width: '170px', height: '40px' }}>
-            <h2 
+          <div className="bg-white/80 backdrop-blur-sm rounded-full shadow-inner border-2 border-yellow-500 flex items-center justify-center h-[48px] px-8">
+            <h2
               className="text-2xl font-bold text-yellow-800"
               style={{ fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif" }}
             >

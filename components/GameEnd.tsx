@@ -33,9 +33,17 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in py-8 overflow-y-auto">
+    <div
+      className="relative flex flex-col items-center justify-center h-full text-center animate-fade-in py-8 overflow-y-auto"
+      style={{
+        backgroundImage: 'url(/images/background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {winner && <Confetti />}
-      <h1 className="text-5xl font-display text-primary-text mb-6">Game Over!</h1>
+      <h1 className="text-5xl font-display text-primary-text mb-6 drop-shadow-lg">Game Over!</h1>
       <div className="flex items-center justify-center gap-6 p-6 bg-sky-100/50 rounded-2xl">
         <StarIcon className="w-20 h-20 text-yellow-400 animate-pulse" />
         {winnerMessage()}

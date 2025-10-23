@@ -240,7 +240,7 @@ const QuizPopup: React.FC<QuizPopupProps> = ({
 
   return (
     <div className={`${customStyles.modalBackground ? 'absolute inset-0' : 'contents'} ${customStyles.modalBackground} ${customStyles.modalBackground ? 'backdrop-blur-sm' : ''} flex justify-center items-center ${customStyles.modalBackground ? 'z-[60]' : ''} transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
-      <div className={`w-[90%] max-w-6xl h-[80%] ${customStyles.modalContainer} flex flex-col p-10 relative transition-transform duration-500 ${isExiting ? 'scale-90' : 'scale-100'} animate-pop-in ${isLocked ? 'quiz-locked' : ''}`}>
+      <div className={`w-[1120px] h-[640px] ${customStyles.modalContainer} flex flex-col p-10 relative transition-transform duration-500 ${isExiting ? 'scale-90' : 'scale-100'} animate-pop-in ${isLocked ? 'quiz-locked' : ''}`}>
         
         {/* 상단 헤더 */}
         <div className="flex justify-between items-center mb-8">

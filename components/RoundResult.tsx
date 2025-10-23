@@ -4,6 +4,7 @@ import { Team, GameMode } from '../types.ts';
 import { StarIcon } from './icons/StarIcon.tsx';
 import { CheckIcon } from './icons/CheckIcon.tsx';
 import { XIcon } from './icons/XIcon.tsx';
+import { CORRECT_SPELLING_THRESHOLD, ROUND_RESULT_AUTO_ADVANCE_DELAY } from '../constants/gameConstants.ts';
 
 interface RoundResultProps {
   winner: Team | null;
@@ -13,9 +14,6 @@ interface RoundResultProps {
   word: string;
   wordImage?: string;
 }
-
-// AI returns a score of 10 or less if the word is spelled incorrectly.
-const CORRECT_SPELLING_THRESHOLD = 10;
 
 const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, gameMode, word, wordImage }) => {
   const teamAResult = results.find(r => r.team === Team.A);
@@ -32,12 +30,12 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
     if (winner) {
       const timer = setTimeout(() => {
         onContinue();
-      }, 2000); // 2-second delay before auto-advancing
+      }, ROUND_RESULT_AUTO_ADVANCE_DELAY);
 
       return () => clearTimeout(timer); // Cleanup function
     }
   }, [winner, onContinue]);
-  
+
   const renderTeamResult = (team: Team, result: TracingResult | undefined, spelledCorrectly: boolean) => {
     const isWinner = winner === team;
     const teamName = team === Team.A ? 'Team A' : 'Team B';
@@ -47,13 +45,13 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
     const winnerClass = isWinner ? `border-yellow-400 ${teamBgClass}` : 'border-transparent';
 
     return (
-        <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-h-[240px] ${winnerClass}`} style={{ transition: 'border-color 0.5s ease, background-color 0.5s ease' }}>
-            <h2 className={`text-4xl font-display ${teamColorClass}`}>{teamName}</h2>
+        <div className={`flex flex-col items-center p-5 rounded-2xl border-4 min-h-[200px] shadow-md ${winnerClass}`} style={{ transition: 'border-color 0.5s ease, background-color 0.5s ease' }}>
+            <h2 className={`text-3xl font-display ${teamColorClass} mb-1`}>{teamName}</h2>
             {showAccuracy ? (
                 <>
-                    <p 
-                      className="text-7xl font-display my-2 tabular-nums min-w-[200px]" 
-                      style={{ 
+                    <p
+                      className="text-6xl font-display my-2 tabular-nums min-w-[180px]"
+                      style={{
                         willChange: 'auto',
                         backfaceVisibility: 'hidden',
                         transform: 'translate3d(0, 0, 0)',
@@ -62,18 +60,18 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
                     >
                       {result?.accuracy ?? 0}%
                     </p>
-                    <p className="text-xl">Accuracy</p>
+                    <p className="text-lg font-semibold text-gray-600">Accuracy</p>
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center my-2 h-28 w-40 text-center">
+                <div className="flex flex-col items-center justify-center my-2 h-24 w-32 text-center">
                     {!result?.hasDrawn ? (
-                        <p className="text-2xl font-bold text-secondary-text">Did not draw</p>
+                        <p className="text-xl font-bold text-secondary-text">Did not draw</p>
                     ) : spelledCorrectly ? (
-                        <div className="flex flex-col items-center gap-2 text-correct">
+                        <div className="flex flex-col items-center gap-1 text-correct">
                             <p className="text-6xl font-display">O</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center gap-2 text-incorrect">
+                        <div className="flex flex-col items-center gap-1 text-incorrect">
                             <p className="text-6xl font-display">X</p>
                         </div>
                     )}
@@ -96,66 +94,70 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl p-8 text-center w-full max-w-4xl transform transition-all animate-fade-in-up"
+        className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-4xl transform transition-all animate-fade-in-up"
         style={{
           willChange: 'transform, opacity',
-          backfaceVisibility: 'hidden'
+          backfaceVisibility: 'hidden',
+          boxShadow: '0 25px 70px rgba(0,0,0,0.3)'
         }}
       >
-        <h1 className="text-7xl font-display text-accent-yellow drop-shadow-lg">
+        <h1 className="text-5xl font-display text-accent-yellow drop-shadow-lg mb-4">
           {gameMode === GameMode.TRACE ? 'Tracing Result!' : 'Drawing Result!'}
         </h1>
 
         {gameMode === GameMode.DRAW && (
           <div className="flex flex-col items-center justify-center mt-4">
             {bothIncorrectInDrawMode && wordImage && (
-              <img src={wordImage} alt={word} className="w-[312px] h-[234px] object-cover rounded-xl bg-slate-100 p-2 shadow-inner mb-4" />
+              <img src={wordImage} alt={word} className="w-[312px] h-[234px] object-cover rounded-2xl bg-slate-100 p-2 shadow-lg mb-4" />
             )}
             <div className="flex items-baseline justify-center gap-3">
-              <p className="text-3xl text-secondary-text">The word was:</p>
-              <p className="text-8xl font-display text-team-a drop-shadow">
+              <p className="text-2xl font-semibold text-gray-600">The word was:</p>
+              <p className="text-6xl font-display text-team-a drop-shadow-lg">
                 {word}
               </p>
             </div>
           </div>
         )}
-        
+
         {!bothIncorrectInDrawMode && (
-          <div className="my-4 min-h-[210px] flex items-center justify-center">
-            <div className="flex justify-around w-full">
+          <div className="my-3 min-h-[180px] flex items-center justify-center">
+            <div className="flex justify-around w-full gap-6">
               {renderTeamResult(Team.A, teamAResult, teamASpelledCorrectly)}
               {renderTeamResult(Team.B, teamBResult, teamBSpelledCorrectly)}
             </div>
           </div>
         )}
-        
+
         <div className="mt-4 min-h-[60px] flex items-center justify-center">
           {winner === null ? (
-              <p className="text-4xl font-display text-primary-text">
+              <p className="text-3xl font-display text-primary-text">
                 It's a tie! No quiz this round.
               </p>
           ) : (
-              <div className="flex items-center justify-center gap-4">
-                <StarIcon className="w-10 h-10 text-yellow-400" />
-                <p className={`text-4xl font-display ${winner === Team.A ? 'text-team-a' : 'text-team-b'}`}>
+              <div className="flex items-center justify-center gap-3">
+                <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
+                <p className={`text-3xl font-display ${winner === Team.A ? 'text-team-a' : 'text-team-b'}`}>
                   {winner === Team.A ? 'Team A' : 'Team B'} wins the quiz chance!
                 </p>
-                <StarIcon className="w-10 h-10 text-yellow-400" />
+                <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
               </div>
           )}
         </div>
-        
+
         <div className="mt-4 min-h-[76px] flex items-center justify-center">
           {winner === null ? (
             <button
               onClick={onContinue}
-              className="px-12 py-4 text-3xl font-display text-white bg-correct rounded-full shadow-lg hover:bg-green-600 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300"
+              className="px-12 py-4 text-2xl font-display text-white bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 ease-out border-4 border-white"
+              style={{
+                boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4), inset 0 -4px 0 rgba(0,0,0,0.1)'
+              }}
             >
               Next Round
             </button>
           ) : (
             <div className="flex items-center justify-center gap-3 text-secondary-text">
-              <div className="w-6 h-6 border-4 border-dashed rounded-full animate-spin border-slate-400"></div>
+              <div className="w-7 h-7 border-4 border-dashed rounded-full animate-spin border-slate-400"></div>
               <p className="text-2xl font-bold">Starting quiz...</p>
             </div>
           )}

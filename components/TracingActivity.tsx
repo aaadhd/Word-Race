@@ -5,11 +5,16 @@ import DrawingCanvas from './TracingCanvas.tsx';
 import RoundResult from './RoundResult.tsx';
 import { StarIcon } from './icons/StarIcon.tsx';
 import { recognizeHandwriting } from '../services/geminiService.ts';
+import CountingNumber from './CountingNumber.tsx';
+import RoundLoading from './RoundLoading.tsx';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const RESULT_DISPLAY_TIME = 2500; // 퀴즈 포함 모드와 동일한 시간
+const LOADING_SCREEN_TIME = 1500; // 로딩 화면 표시 시간
 
 interface DrawingActivityProps {
   roundData: RoundData;
-  onComplete: (winner: Team | null) => void;
-  isBonusRound: boolean;
+  onComplete: (winner: Team | null, results?: any) => void;
   gameMode: GameMode;
   isPaused: boolean;
   onTimerChange?: (timeLeft: number) => void;
@@ -17,6 +22,10 @@ interface DrawingActivityProps {
   resetActivity?: boolean;
   currentRound?: number;
   isQuizMode?: boolean; // 퀴즈 모드 여부
+  quizIncluded?: boolean;
+  onQuizStart?: (winner: Team) => void;
+  previousTeamAScore?: number;
+  previousTeamBScore?: number;
 }
 
 interface RawResult {
@@ -46,7 +55,7 @@ const speakWord = (word: string) => {
 };
 
 
-const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, isBonusRound, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false, currentRound = 1, isQuizMode = false }) => {
+const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false, currentRound = 1, isQuizMode = false, quizIncluded = false, onQuizStart, previousTeamAScore = 0, previousTeamBScore = 0 }) => {
   console.log('TracingActivity - gameMode received:', gameMode);
   const alpacaVideoRef = useRef<HTMLVideoElement>(null);
   const catVideoRef = useRef<HTMLVideoElement>(null);
@@ -66,9 +75,12 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   const [showResultModal, setShowResultModal] = useState(false);
   const [finalResults, setFinalResults] = useState<TracingResult[] | null>(null);
   const [winner, setWinner] = useState<Team | null>(null);
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [calculatedScores, setCalculatedScores] = useState({ teamA: 0, teamB: 0 });
   const [roundStartAtMs, setRoundStartAtMs] = useState<number | null>(null);
   const [videoEnded, setVideoEnded] = useState(false);
   const [videosLoaded, setVideosLoaded] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false);
 
   // 라운드 시작시각을 isPaused가 풀리는 순간 동기화하여 설정
   useEffect(() => {
@@ -78,8 +90,11 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   }, [isPaused, roundStartAtMs]);
 
   // 새로운 라운드 시작 시 모든 상태 초기화
+  const prevWordRef = useRef(roundData.word);
   useEffect(() => {
-    if (resetActivity) {
+    // word가 변경된 경우에만 초기화 (resetActivity는 이제 무시)
+    if (prevWordRef.current !== roundData.word) {
+      console.log('🔄 새 라운드 감지 - 상태 초기화:', { 이전: prevWordRef.current, 새로운: roundData.word });
       setTeamADone(false);
       setTeamBDone(false);
       setTeamARawResult(null);
@@ -88,11 +103,13 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
       setShowResultModal(false);
       setFinalResults(null);
       setWinner(null);
+      setShowScoreModal(false);
       setRoundStartAtMs(null);
       setVideoEnded(false);
       setVideosLoaded(false);
+      prevWordRef.current = roundData.word;
     }
-  }, [resetActivity, roundData.word]); // roundData.word를 의존성에 추가하여 새 라운드 감지
+  }, [roundData.word]);
   
   // 모든 라운드에서 즉시 게임 시작
   useEffect(() => {
@@ -202,8 +219,70 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   }, [teamADone, teamBDone, teamARawResult, teamBRawResult, gameMode, roundData.word, resetActivity]);
   
   const handleContinueFromModal = () => {
-    onComplete(winner);
+    console.log('handleContinueFromModal called:', { winner, finalResults, quizIncluded });
+    if (winner && quizIncluded && onQuizStart) {
+      // 퀴즈 포함 모드: 승자가 있으면 퀴즈 시작
+      onQuizStart(winner);
+    } else if (winner === null && quizIncluded) {
+      // 퀴즈 포함 모드: 승자가 없으면 (No quiz) 로딩 화면 표시 후 다음 라운드
+      setShowResultModal(false);
+      setShowLoadingScreen(true);
+
+      setTimeout(() => {
+        setShowLoadingScreen(false);
+        onComplete(null, finalResults);
+      }, LOADING_SCREEN_TIME);
+    } else if (!quizIncluded) {
+      // 퀴즈 미포함 모드: 점수를 직접 계산하고 점수 모달 표시
+      const teamAWin = winner === Team.A;
+      const teamBWin = winner === Team.B;
+
+      let teamAScore = 0;
+      let teamBScore = 0;
+
+      if (gameMode === GameMode.TRACE) {
+        // TRACE 모드: 일치율이 높은 팀이 30점, 낮은 팀은 0점
+        if (finalResults) {
+          const teamAResult = finalResults.find(r => r.team === Team.A)!;
+          const teamBResult = finalResults.find(r => r.team === Team.B)!;
+          teamAScore = teamAResult.accuracy > teamBResult.accuracy ? 30 : 0;
+          teamBScore = teamBResult.accuracy > teamAResult.accuracy ? 30 : 0;
+        }
+      } else if (gameMode === GameMode.DRAW) {
+        // DRAW 모드: 맞춘 팀이 30점, 틀린 팀은 0점
+        teamAScore = teamAWin ? 30 : 0;
+        teamBScore = teamBWin ? 30 : 0;
+      }
+
+      console.log('퀴즈 미포함 모드 - 점수 계산:', { teamAScore, teamBScore, winner, gameMode });
+
+      setCalculatedScores({ teamA: teamAScore, teamB: teamBScore });
+      setShowResultModal(false);
+      setShowScoreModal(true);
+
+      // 타이머로 자동 닫기 (퀴즈 포함 모드와 동일하게)
+      setTimeout(() => {
+        setShowScoreModal(false);
+
+        // 로딩 화면 표시
+        setShowLoadingScreen(true);
+
+        // 로딩 화면 후 다음 라운드로 이동
+        setTimeout(() => {
+          setShowLoadingScreen(false);
+
+          // 현재 점수를 포함한 결과를 생성
+          const resultsWithScores = finalResults?.map(result => ({
+            ...result,
+            points: result.team === Team.A ? calculatedScores.teamA : calculatedScores.teamB
+          }));
+
+          onComplete(winner, resultsWithScores);
+        }, LOADING_SCREEN_TIME);
+      }, RESULT_DISPLAY_TIME);
+    }
   };
+
 
 
   if (isScoring) {
@@ -226,23 +305,25 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         willChange: 'opacity',
         backfaceVisibility: 'hidden',
         transform: 'translate3d(0, 0, 0)',
-        opacity: videosLoaded ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
+        opacity: 1
       }}
     >
-      {/* 전체 라운드 배경 이미지 - 라운드 시작 상태가 아닐 때만 표시 */}
-      {!isPaused || isQuizMode ? (
-        <div 
-          className="absolute inset-0 -z-20"
-          style={{
-            backgroundImage: 'url(/images/background.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        />
-      ) : null}
-      
+      {/* 전체 라운드 배경 이미지 */}
+      <img
+        src="/images/background.png"
+        alt="background"
+        className="absolute"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center bottom',
+          left: 0,
+          top: 0,
+          zIndex: -1
+        }}
+      />
+
        {/* 동물 영상/이미지 레이어 - 현재 라운드에 맞는 영상만 렌더링 */}
        {/* Round 1 or 5, 9, 13... */}
        {cycleRound === 1 && (
@@ -403,8 +484,8 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
        )}
 
       {/* Image Container - 절대 위치 */}
-      {videoEnded && !isPaused && (
-        <div className="absolute top-[63px] left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center gap-2 z-50">
+      {videoEnded && (
+        <div className="absolute top-[63px] left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center gap-2 z-10">
           {roundData.wordImage && (
               <div 
                 className="bg-slate-100 p-1 rounded-2xl shadow-lg cursor-pointer transition-transform hover:scale-110 active:scale-100"
@@ -416,22 +497,23 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
                   <img src={roundData.wordImage} alt={gameMode === GameMode.TRACE ? roundData.word : 'Guess the word'} className="w-[274px] h-[188px] object-cover rounded-xl" />
               </div>
           )}
-          <p className="text-xl text-secondary-text font-bold">
+          <p className="text-xl text-white font-bold">
             {gameMode === GameMode.DRAW ? 'What is this? Write the word!' : ''}
           </p>
         </div>
       )}
       
       {/* Drawing Canvas Container - 절대 위치 */}
-      {videoEnded && (!isPaused || isQuizMode) && (
+      {videoEnded && (
         <>
           {/* Team A - 왼쪽 영상 영역 중앙 */}
-          <div className={`absolute top-[336px] left-0 w-1/2 flex justify-start items-center transition-opacity duration-500 z-20`}>
+          <div className={`absolute top-[346px] left-0 w-1/2 flex justify-start items-center transition-opacity duration-500 z-20`}>
             <div className="flex justify-center items-center" style={{ width: '740px', marginLeft: '0px', transform: 'translateX(-3%)' }}>
-              <DrawingCanvas 
-                word={roundData.word} 
-                strokeColor="#3b82f6" 
-                onDone={handleTeamADone} 
+              <DrawingCanvas
+                key={`teamA-${currentRound}`}
+                word={roundData.word}
+                strokeColor="#3b82f6"
+                onDone={handleTeamADone}
                 mode={gameMode}
                 isPaused={isPaused || showResultModal}
                 startAtMs={roundStartAtMs}
@@ -443,9 +525,10 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
           </div>
 
           {/* Team B - 오른쪽 영상 영역 중앙 */}
-          <div className={`absolute top-[336px] right-0 w-1/2 flex justify-end items-center transition-opacity duration-500 z-20`}>
+          <div className={`absolute top-[346px] right-0 w-1/2 flex justify-end items-center transition-opacity duration-500 z-20`}>
             <div className="flex justify-center items-center" style={{ width: '740px', marginRight: '0px', transform: 'translateX(3%)' }}>
               <DrawingCanvas 
+                key={`teamB-${currentRound}`}
                 word={roundData.word} 
                 strokeColor="#ef4444" 
                 onDone={handleTeamBDone} 
@@ -461,17 +544,101 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         </>
       )}
 
-      {/* Result Modal */}
-      {showResultModal && finalResults && !hideResultModal && (
-        <RoundResult
-          winner={winner}
-          results={finalResults}
-          onContinue={handleContinueFromModal}
-          gameMode={gameMode}
-          word={roundData.word}
-          wordImage={roundData.wordImage}
-        />
+      {/* 통합 딤 레이어 - Result Modal 또는 Score Modal이 표시될 때 */}
+      {((finalResults && !hideResultModal && !isQuizMode && showResultModal) || (!quizIncluded && showScoreModal)) && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[45]" />
       )}
+
+      {/* Result Modal - 퀴즈 모드에서는 숨김 */}
+      {finalResults && !hideResultModal && !isQuizMode && showResultModal && (
+        <div className="absolute inset-0 z-[46]">
+          <RoundResult
+            winner={winner}
+            results={finalResults}
+            onContinue={handleContinueFromModal}
+            gameMode={gameMode}
+            word={roundData.word}
+            wordImage={roundData.wordImage}
+            showButton={quizIncluded}
+            noQuiz={winner === null && quizIncluded}
+          />
+        </div>
+      )}
+
+      {/* Score Modal - 퀴즈 미포함 모드에서만 표시 */}
+      {!quizIncluded && showScoreModal && (
+        <div className="absolute inset-0 z-[46] flex items-center justify-center pointer-events-none">
+          <div className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-2xl pointer-events-auto">
+            <h1 className="text-5xl font-display text-accent-yellow drop-shadow-lg mb-4">
+              Points Earned!
+            </h1>
+            
+            <div className="flex justify-center gap-8 mt-8">
+              {/* Team A Score */}
+              <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
+                calculatedScores.teamA > calculatedScores.teamB ? 'border-team-a bg-team-a/10 scale-105' : 'border-gray-300 bg-gray-50'
+              } transition-all duration-300`}>
+                <h3 className="text-2xl font-display text-team-a mb-2">Team A</h3>
+                <div className="text-6xl font-display text-team-a tabular-nums">
+                  <CountingNumber
+                    key={`teamA-${previousTeamAScore}-${previousTeamAScore + calculatedScores.teamA}`}
+                    from={previousTeamAScore}
+                    to={previousTeamAScore + calculatedScores.teamA}
+                    duration={800}
+                    playSound={true}
+                  />
+                </div>
+                {calculatedScores.teamA > 0 && (
+                  <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
+                    +{calculatedScores.teamA} pts!
+                  </div>
+                )}
+              </div>
+
+              {/* Team B Score */}
+              <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
+                calculatedScores.teamB > calculatedScores.teamA ? 'border-team-b bg-team-b/10 scale-105' : 'border-gray-300 bg-gray-50'
+              } transition-all duration-300`}>
+                <h3 className="text-2xl font-display text-team-b mb-2">Team B</h3>
+                <div className="text-6xl font-display text-team-b tabular-nums">
+                  <CountingNumber
+                    key={`teamB-${previousTeamBScore}-${previousTeamBScore + calculatedScores.teamB}`}
+                    from={previousTeamBScore}
+                    to={previousTeamBScore + calculatedScores.teamB}
+                    duration={800}
+                    playSound={true}
+                  />
+                </div>
+                {calculatedScores.teamB > 0 && (
+                  <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
+                    +{calculatedScores.teamB} pts!
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Loading Screen - No quiz 후 다음 라운드 전환 시 표시 */}
+      <AnimatePresence mode="wait">
+        {showLoadingScreen && (
+          <motion.div
+            key="round-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className="absolute inset-0 z-[1010]"
+          >
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="absolute inset-0 z-[1011]">
+              <RoundLoading nextRound={currentRound + 1} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -106,12 +106,12 @@ const CaptureMode: React.FC<CaptureModeProps> = ({ currentRound }) => {
     <div
       className="relative h-full w-full"
       style={{
-        width: '1280px',
-        height: '800px',
+        width: '100%',
+        height: '100%',
         backgroundColor: '#87CEEB', // 하늘색 배경 (이미지 로드 실패시 대체)
         backgroundImage: 'url(./images/background.png)',
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: 'center bottom',
         backgroundRepeat: 'no-repeat'
       }}
     >

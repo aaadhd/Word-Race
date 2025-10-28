@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameMode } from '../types.ts';
 import SpriteAnimation from './SpriteAnimation.tsx';
+import { playDrawingComplete } from '../utils/soundEffects.ts';
 
 interface DrawingCanvasProps {
   word: string;
@@ -33,6 +34,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const [hasDrawn, setHasDrawn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TRACING_TIME_SECONDS);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isCanvasDisabled, setIsCanvasDisabled] = useState(false);
 
   // Initialize the offscreen canvas for user drawings and set up non-passive event listeners
   useEffect(() => {
@@ -61,7 +63,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
 
   const drawWordTemplate = useCallback((ctx: CanvasRenderingContext2D) => {
     const canvas = ctx.canvas;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Don't clear here - let the caller handle clearing
 
     // Reset context state to prevent any carry-over
     ctx.setLineDash([]);
@@ -256,6 +258,9 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     if (!canvas) return;
     const context = canvas.getContext('2d');
     if (!context) return;
+    
+    // Clear canvas before drawing template
+    context.clearRect(0, 0, canvas.width, canvas.height);
     drawWordTemplate(context);
   }, [word, drawWordTemplate]);
 
@@ -291,6 +296,31 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const context = canvas.getContext('2d');
     if (!context) return;
 
+    // Method 1: Complete canvas reset
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Reset ALL context properties to default values
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 1;
+    context.globalCompositeOperation = 'source-over';
+    context.strokeStyle = '#000000';
+    context.fillStyle = '#000000';
+    context.lineWidth = 1;
+    context.lineCap = 'butt';
+    context.lineJoin = 'miter';
+    context.miterLimit = 10;
+    context.setLineDash([]);
+    context.lineDashOffset = 0;
+    context.shadowBlur = 0;
+    context.shadowColor = 'rgba(0, 0, 0, 0)';
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
+    context.filter = 'none';
+
+    // Method 2: Force clear with white background
+    context.fillStyle = 'transparent';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
     // Draw template (this resets context internally)
     drawWordTemplate(context);
 
@@ -313,7 +343,9 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   };
 
   const handleDone = () => {
+    playDrawingComplete(); // 그림 완성 사운드 (띠링딩!)
     setIsCompleted(true);
+    setIsCanvasDisabled(true);
     setTimeLeft(0);
     finishAttempt();
   }
@@ -324,6 +356,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   };
 
   const startDrawing = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (isCanvasDisabled || isPaused) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -343,10 +377,9 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const x = (coords.x - rect.left) * scaleX;
     const y = (coords.y - rect.top) * scaleY;
 
-    // Start path on visible canvas
+    // Start path on visible canvas for real-time feedback
     const context = canvas.getContext('2d');
     if (context) {
-        // Set user drawing state only when starting to draw
         context.strokeStyle = strokeColor;
         context.lineWidth = 16;
         context.lineCap = 'round';
@@ -356,12 +389,11 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         context.moveTo(x, y);
     }
     
-    // Start path on hidden user canvas
+    // Start path on hidden user canvas for analysis
     const userCanvas = userCanvasRef.current;
     if(userCanvas) {
         const userCtx = userCanvas.getContext('2d');
         if(userCtx) {
-            // Set user drawing state only when starting to draw
             userCtx.strokeStyle = 'black';
             userCtx.lineWidth = 16;
             userCtx.lineCap = 'round';
@@ -396,14 +428,19 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     const x = (coords.x - rect.left) * scaleX;
     const y = (coords.y - rect.top) * scaleY;
 
-    // Draw on visible canvas
+    // Draw on visible canvas for real-time feedback
     const context = canvas.getContext('2d');
     if (context) {
+        context.strokeStyle = strokeColor;
+        context.lineWidth = 16;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.setLineDash([]);
         context.lineTo(x, y);
         context.stroke();
     }
-    
-    // Draw on hidden user canvas
+
+    // Draw on hidden user canvas for analysis
     const userCanvas = userCanvasRef.current;
     if (userCanvas) {
         const userCtx = userCanvas.getContext('2d');
@@ -436,12 +473,27 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const timerColorClass = timeLeft > 10 ? 'text-green-500' : timeLeft > 5 ? 'text-yellow-500' : 'text-red-500 animate-pulse';
 
   return (
-    <div className="flex flex-col items-center gap-2 w-full relative">
+    <div 
+      className="flex flex-col items-center gap-2 w-full relative"
+      style={{
+        position: 'relative',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '8px',
+        transform: 'none',
+        margin: '0',
+        padding: '0'
+      }}
+    >
       <canvas
         ref={canvasRef}
         width="450"
         height="300"
-        className="bg-transparent rounded-2xl cursor-crosshair relative z-10"
+        className={`bg-transparent rounded-2xl cursor-crosshair relative z-10 transition-opacity duration-300 ${
+          isCanvasDisabled ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
         style={{ backgroundColor: 'transparent', touchAction: 'none' }}
         onMouseDown={startDrawing}
         onMouseMove={draw}
@@ -456,8 +508,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         <button
           onClick={handleClear}
           onTouchStart={handleTouchStart(handleClear)}
-          disabled={!hasDrawn || isPaused}
-          className="px-8 py-3 text-2xl font-display text-white bg-red-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-red-600 transition-all transform hover:scale-105 active:scale-100"
+          disabled={!hasDrawn || isCanvasDisabled}
+          className="px-8 py-3 text-2xl font-display text-white bg-red-500 rounded-full shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-red-600 transition-all transform hover:scale-105 active:scale-100"
           style={{ WebkitTapHighlightColor: 'transparent' }}
           aria-label="Clear drawing"
         >
@@ -466,10 +518,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
         <button
           onClick={handleDone}
           onTouchStart={handleTouchStart(handleDone)}
-          disabled={!hasDrawn || isPaused}
-          className={`px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100 ${
-            isCompleted ? 'ring-4 ring-yellow-400 ring-opacity-75' : ''
-          }`}
+          disabled={!hasDrawn || isCanvasDisabled}
+          className="px-8 py-3 text-2xl font-display text-white bg-green-500 rounded-full shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-green-600 transition-all transform hover:scale-105 active:scale-100"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           Done!

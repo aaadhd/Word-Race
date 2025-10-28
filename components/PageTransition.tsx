@@ -62,7 +62,7 @@ const transitionVariants: Record<TransitionType, Variants> = {
 
 const transitionConfig: Record<TransitionType, any> = {
   fade: {
-    duration: 0.25,
+    duration: 0.15,
     ease: [0.4, 0, 0.2, 1],
   },
   slideUp: {

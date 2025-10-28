@@ -26,7 +26,7 @@ const GameTitleScreen: React.FC<GameTitleScreenProps> = ({ onComplete }) => {
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center"
+      className="absolute inset-0 flex items-center justify-center bg-white"
       style={{
         backgroundImage: 'url(/images/title_bg.png)',
         backgroundSize: 'cover',

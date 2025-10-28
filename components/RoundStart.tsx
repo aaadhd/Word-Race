@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { playRoundStart, playButtonClick } from '../utils/soundEffects.ts';
 
 interface RoundStartProps {
   currentRound: number;
@@ -7,13 +8,29 @@ interface RoundStartProps {
 
 const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
   const backgroundVideoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   // 각 라운드별 배경 비디오 자동 재생
   useEffect(() => {
+    setVideoLoaded(false); // 라운드 변경 시 로딩 상태 리셋
     if (backgroundVideoRef.current) {
       backgroundVideoRef.current.play().catch(console.error);
     }
   }, [currentRound]);
+
+  // 라운드 시작 사운드 재생
+  useEffect(() => {
+    // 모달이 나타난 후 사운드 재생 (3초 딜레이)
+    const timer = setTimeout(() => {
+      playRoundStart();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [currentRound]);
+
+  // 비디오 로딩 완료 감지
+  const handleVideoLoaded = () => {
+    setVideoLoaded(true);
+  };
 
   // 각 라운드별 배경 비디오 소스 반환
   const getBackgroundVideoSrc = () => {
@@ -108,40 +125,64 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
       aria-modal="true"
       role="dialog"
       style={{
         willChange: 'opacity',
         backfaceVisibility: 'hidden',
-        transform: 'translate3d(0, 0, 0)'
+        transform: 'translate3d(0, 0, 0)',
+        zIndex: 1
       }}
     >
+      {/* 배경 이미지 - 비디오 로딩 전 또는 fallback */}
+      <img
+        src="/images/background.png"
+        alt="background"
+        className="absolute transition-opacity duration-1000"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center bottom',
+          left: 0,
+          top: 0,
+          zIndex: 1,
+          opacity: videoLoaded ? 0 : 1,
+          pointerEvents: 'none'
+        }}
+      />
+
       {/* 각 라운드별 배경 비디오 */}
       <video
         ref={backgroundVideoRef}
-        className="absolute"
+        className="absolute transition-opacity duration-1000"
         muted
         playsInline
         preload="auto"
+        onLoadedData={handleVideoLoaded}
         style={{
-          width: '1280px',
-          height: 'auto',
-          objectFit: 'contain',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
           objectPosition: 'center bottom',
           left: 0,
-          bottom: 0
+          top: 0,
+          zIndex: 1,
+          opacity: videoLoaded ? 1 : 0,
+          pointerEvents: 'none'
         }}
       >
         <source src={getBackgroundVideoSrc()} type="video/mp4" />
       </video>
 
-      {/* 딤 레이어 (영상과 모달 사이) - 흰색 딤 20% */}
+      {/* 딤 레이어 (배경과 모달 사이) - 흰색 딤 20% */}
       <div
         className="absolute inset-0 bg-white/20"
         style={{
           willChange: 'opacity',
-          backfaceVisibility: 'hidden'
+          backfaceVisibility: 'hidden',
+          zIndex: 2
         }}
       />
 
@@ -155,7 +196,8 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
           animationDelay: '3s',
           willChange: 'transform, opacity',
           backfaceVisibility: 'hidden',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.1)'
+          boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 0 0 8px rgba(255,255,255,0.1)',
+          zIndex: 3
         }}
       >
         <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-3 mb-5">
@@ -165,7 +207,10 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
         </div>
 
         <button
-          onClick={onStart}
+          onClick={() => {
+            playButtonClick();
+            onStart();
+          }}
           className="relative px-10 py-3 text-2xl font-display text-white bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 ease-out border-4 border-white transform hover:rotate-1"
           style={{
             boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4), inset 0 -4px 0 rgba(0,0,0,0.1)'

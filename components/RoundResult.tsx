@@ -13,9 +13,11 @@ interface RoundResultProps {
   gameMode: GameMode;
   word: string;
   wordImage?: string;
+  showButton?: boolean;
+  noQuiz?: boolean;
 }
 
-const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, gameMode, word, wordImage }) => {
+const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, gameMode, word, wordImage, showButton = true, noQuiz = false }) => {
   const teamAResult = results.find(r => r.team === Team.A);
   const teamBResult = results.find(r => r.team === Team.B);
 
@@ -27,14 +29,15 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
   const bothIncorrectInDrawMode = gameMode === GameMode.DRAW && !teamASpelledCorrectly && !teamBSpelledCorrectly;
 
   useEffect(() => {
-    if (winner) {
+    // 승자가 있거나, noQuiz이거나, 퀴즈 미포함 모드(!showButton)일 때 자동으로 진행
+    if (winner || noQuiz || !showButton) {
       const timer = setTimeout(() => {
         onContinue();
       }, ROUND_RESULT_AUTO_ADVANCE_DELAY);
 
       return () => clearTimeout(timer); // Cleanup function
     }
-  }, [winner, onContinue]);
+  }, [winner, noQuiz, showButton, onContinue]);
 
   const renderTeamResult = (team: Team, result: TracingResult | undefined, spelledCorrectly: boolean) => {
     const isWinner = winner === team;
@@ -84,7 +87,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
 
   return (
     <div
-      className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in"
+      className="absolute inset-0 flex items-center justify-center z-50 animate-fade-in"
       aria-modal="true"
       role="dialog"
       style={{
@@ -94,7 +97,7 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
       }}
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-4xl transform transition-all animate-fade-in-up"
+        className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-2xl transform transition-all animate-fade-in-up"
         style={{
           willChange: 'transform, opacity',
           backfaceVisibility: 'hidden',
@@ -128,40 +131,25 @@ const RoundResult: React.FC<RoundResultProps> = ({ winner, results, onContinue, 
           </div>
         )}
 
-        <div className="mt-4 min-h-[60px] flex items-center justify-center">
-          {winner === null ? (
-              <p className="text-3xl font-display text-primary-text">
-                It's a tie! No quiz this round.
+        {winner !== null && (
+          <div className="mt-4 min-h-[60px] flex items-center justify-center">
+            <div className="flex items-center justify-center gap-3">
+              <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
+              <p className={`text-3xl font-display ${winner === Team.A ? 'text-team-a' : 'text-team-b'}`}>
+                {winner === Team.A ? 'Team A' : 'Team B'} wins!
               </p>
-          ) : (
-              <div className="flex items-center justify-center gap-3">
-                <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
-                <p className={`text-3xl font-display ${winner === Team.A ? 'text-team-a' : 'text-team-b'}`}>
-                  {winner === Team.A ? 'Team A' : 'Team B'} wins the quiz chance!
-                </p>
-                <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
-              </div>
-          )}
-        </div>
-
-        <div className="mt-4 min-h-[76px] flex items-center justify-center">
-          {winner === null ? (
-            <button
-              onClick={onContinue}
-              className="px-12 py-4 text-2xl font-display text-white bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 ease-out border-4 border-white"
-              style={{
-                boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4), inset 0 -4px 0 rgba(0,0,0,0.1)'
-              }}
-            >
-              Next Round
-            </button>
-          ) : (
-            <div className="flex items-center justify-center gap-3 text-secondary-text">
-              <div className="w-7 h-7 border-4 border-dashed rounded-full animate-spin border-slate-400"></div>
-              <p className="text-2xl font-bold">Starting quiz...</p>
+              <StarIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {showButton && (
+          <div className="mt-4 min-h-[76px] flex items-center justify-center">
+            <p className="text-2xl font-display text-gray-600 animate-pulse">
+              {noQuiz ? 'No quiz for this round.' : 'Preparing quiz...'}
+            </p>
+          </div>
+        )}
 
       </div>
     </div>

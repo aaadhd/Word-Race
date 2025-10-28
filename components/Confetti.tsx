@@ -1,15 +1,37 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const CONFETTI_COUNT = 150;
+interface ConfettiProps {
+    trigger?: boolean;
+    type?: 'success' | 'error';
+    count?: number;
+}
 
-const Confetti: React.FC = () => {
-    const confetti = Array.from({ length: CONFETTI_COUNT }).map((_, index) => {
+const Confetti: React.FC<ConfettiProps> = ({ trigger = true, type = 'success', count = 100 }) => {
+    const [show, setShow] = useState(trigger);
+
+    useEffect(() => {
+        if (trigger) {
+            setShow(true);
+            const timer = setTimeout(() => {
+                setShow(false);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [trigger]);
+
+    if (!show) return null;
+
+    const confetti = Array.from({ length: count }).map((_, index) => {
+        const colors = type === 'success'
+            ? ['#fbbf24', '#f59e0b', '#22c55e', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e']
+            : ['#ef4444', '#dc2626', '#f87171', '#fca5a5'];
+
         const style: React.CSSProperties = {
             left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${Math.random() * 3 + 2}s`,
-            backgroundColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            animationDelay: `${Math.random() * 0.5}s`,
+            animationDuration: `${(Math.random() * 1.5 + 2) * 0.8}s`,
+            backgroundColor: colors[Math.floor(Math.random() * colors.length)],
         };
         return <div key={index} className="confetti" style={style}></div>;
     });
@@ -36,7 +58,7 @@ const css = `
     height: 20px;
     top: -30px;
     opacity: 0.8;
-    animation: fall linear infinite;
+    animation: fall linear forwards;
 }
 @keyframes fall {
     0% {

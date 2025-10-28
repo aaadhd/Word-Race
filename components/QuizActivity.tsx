@@ -3,47 +3,131 @@ import type { Quiz } from '../types.ts';
 import { Team } from '../types.ts';
 import QuizPopup, { QuizData } from './QuizPopup.tsx';
 import QuizResultModal from './QuizResultModal.tsx';
+import { playCorrectAnswer, playWrongAnswer } from '../utils/soundEffects.ts';
 
 interface QuizActivityProps {
   quiz: Quiz;
   playingTeam: Team;
-  onComplete: (isCorrect: boolean) => void;
-  isBonusRound: boolean;
+  onComplete: (isCorrect: boolean, newTeamAScore: number, newTeamBScore: number) => void;
   onTimerChange?: (timeLeft: number) => void;
+  previousTeamAScore: number;
+  previousTeamBScore: number;
+  onFadeOutStart?: () => void;
 }
 
 const QUIZ_TIME_SECONDS = 15;
-const FEEDBACK_DISPLAY_TIME = 1000; // 1초
-const RESULT_DISPLAY_TIME = 1200; // 1.2초 (20% 증가)
+const FEEDBACK_DISPLAY_TIME = 1200; // 1.2초 - 피드백 토스트 표시 시간
+const QUIZ_MODAL_DISPLAY_TIME = 3000; // 3초 - 퀴즈 모달(정답/오답 색상) 유지 시간
+const RESULT_DISPLAY_TIME = 2500; // 2.5초 (점수 카운팅 800ms + 카운팅 완료 후 유지 1.7초)
 
 type QuizResult = {
   isCorrect: boolean;
   status: 'success' | 'failed' | 'times_up';
 };
 
-const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComplete, isBonusRound, onTimerChange }) => {
+const QuizActivity: React.FC<QuizActivityProps> = ({
+  quiz,
+  playingTeam,
+  onComplete,
+  onTimerChange,
+  previousTeamAScore,
+  previousTeamBScore,
+  onFadeOutStart
+}) => {
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [hideQuizModal, setHideQuizModal] = useState(false);
   const [feedbackFading, setFeedbackFading] = useState(false);
-  const [resultFading, setResultFading] = useState(false);
   const [quizModalExiting, setQuizModalExiting] = useState(false);
-  const [resultModalEntering, setResultModalEntering] = useState(false);
+  const [resultModalFading, setResultModalFading] = useState(false);
+  
+  // 완료 시 사용할 최종 점수를 저장하는 ref
+  const finalScoresRef = React.useRef({ teamAScore: 0, teamBScore: 0 });
 
   const teamName = playingTeam === Team.A ? 'Team A' : 'Team B';
-  const points = isBonusRound ? { correct: 4, incorrect: 2 } : { correct: 2, incorrect: 1 };
+  // 정답 30점, 오답 10점 고정
+  const points = { correct: 30, incorrect: 10 };
 
   const handleAnswer = (isCorrect: boolean, selectedOptionText: string) => {
+    console.log('🎮 QuizActivity handleAnswer:', { isCorrect, selectedOptionText });
+
     const status = isCorrect ? 'success' : 'failed';
+    const earnedPoints = isCorrect ? points.correct : points.incorrect;
+    
+    // 최종 점수 즉시 계산하고 ref에 저장
+    const newTeamAScore = playingTeam === Team.A ? previousTeamAScore + earnedPoints : previousTeamAScore;
+    const newTeamBScore = playingTeam === Team.B ? previousTeamBScore + earnedPoints : previousTeamBScore;
+    finalScoresRef.current = { teamAScore: newTeamAScore, teamBScore: newTeamBScore };
+    
+    console.log('💰 최종 점수 ref에 저장:', finalScoresRef.current);
+    
     setQuizResult({ isCorrect, status });
     setShowFeedback(true);
+
+    console.log('  ✅ quizResult 설정:', { isCorrect, status });
+    console.log('  ✅ showFeedback: true');
+
+    // 정답/오답 사운드 재생
+    if (isCorrect) {
+      playCorrectAnswer();
+    } else {
+      playWrongAnswer();
+    }
   };
 
   const handleTimeout = () => {
+    console.log('⏰ QuizActivity handleTimeout');
+    const earnedPoints = points.incorrect; // 시간 초과는 incorrect 점수
+    
+    // 최종 점수 즉시 계산하고 ref에 저장
+    const newTeamAScore = playingTeam === Team.A ? previousTeamAScore + earnedPoints : previousTeamAScore;
+    const newTeamBScore = playingTeam === Team.B ? previousTeamBScore + earnedPoints : previousTeamBScore;
+    finalScoresRef.current = { teamAScore: newTeamAScore, teamBScore: newTeamBScore };
+    
+    console.log('💰 최종 점수 ref에 저장 (timeout):', finalScoresRef.current);
+    
     setQuizResult({ isCorrect: false, status: 'times_up' });
     setShowFeedback(true);
+    playWrongAnswer(); // 시간 초과도 오답 사운드
   };
+
+  // 결과에 따라 새 점수 계산 - useMemo로 최적화하고 의존성 명확히
+  const newScores = React.useMemo(() => {
+    if (!quizResult) {
+      console.log('⚠️ newScores 계산: quizResult 없음, 이전 점수 반환');
+      return {
+        teamAScore: previousTeamAScore,
+        teamBScore: previousTeamBScore
+      };
+    }
+    
+    const earnedPoints = quizResult.isCorrect ? points.correct : points.incorrect;
+    console.log('💰 newScores 계산 시작:', {
+      '결과': quizResult.status,
+      '정답여부': quizResult.isCorrect,
+      '획득점수': earnedPoints,
+      '득점팀': playingTeam === Team.A ? 'Team A' : 'Team B',
+      '이전 Team A': previousTeamAScore,
+      '이전 Team B': previousTeamBScore
+    });
+    
+    if (playingTeam === Team.A) {
+      const result = {
+        teamAScore: previousTeamAScore + earnedPoints,
+        teamBScore: previousTeamBScore
+      };
+      console.log('💰 newScores 결과 (Team A 득점):', result);
+      return result;
+    } else {
+      const result = {
+        teamAScore: previousTeamAScore,
+        teamBScore: previousTeamBScore + earnedPoints
+      };
+      console.log('💰 newScores 결과 (Team B 득점):', result);
+      return result;
+    }
+  }, [quizResult, points, playingTeam, previousTeamAScore, previousTeamBScore]);
 
   // 1-2단계: 피드백 표시 및 종료
   useEffect(() => {
@@ -51,92 +135,150 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
 
     console.log('QuizActivity - 피드백 시퀀스 시작', { showFeedback, quizResult });
 
-    // 1단계: 피드백 페이드아웃 (800ms 후)
-    const fadeOutTimer = setTimeout(() => {
-      setFeedbackFading(true);
-    }, FEEDBACK_DISPLAY_TIME - 200);
+    let closeTimer: NodeJS.Timeout;
 
-    // 2단계: 피드백 종료, 퀴즈 모달 페이드아웃 시작 (1초 후)
-    const feedbackTimer = setTimeout(() => {
-      console.log('QuizActivity - 피드백 종료, 퀴즈 모달 페이드아웃 시작');
-      setShowFeedback(false);
-      setFeedbackFading(false);
+    // 1단계: 피드백은 즉시 표시, 퀴즈 모달과 함께 사라짐
+    // 피드백을 별도로 관리하지 않고 퀴즈 모달과 함께 처리
+
+    // 2단계: 퀴즈 모달 + 정오답 표기 동시 페이드아웃 시작
+    console.log('⏰ 퀴즈 모달 타이머 설정, 대기 시간:', QUIZ_MODAL_DISPLAY_TIME, 'ms');
+    const quizModalExitTimer = setTimeout(() => {
+      console.log('✅ QuizActivity - 퀴즈 모달 페이드아웃 시작');
       setQuizModalExiting(true);
-      
-      // 3단계 준비: 퀴즈 모달 닫기 (300ms 후)
-      setTimeout(() => {
-        console.log('QuizActivity - 퀴즈 모달 닫기, 결과 모달 표시');
+      // 피드백도 함께 페이드아웃
+      setFeedbackFading(true);
+
+      // 3단계: 퀴즈 모달 + 피드백 동시 종료 (300ms 후)
+      closeTimer = setTimeout(() => {
+        console.log('✅ QuizActivity - setHideQuizModal(true) 호출!');
         setHideQuizModal(true);
+        // 피드백도 함께 사라짐
+        setShowFeedback(false);
+        setFeedbackFading(false);
       }, 300);
-    }, FEEDBACK_DISPLAY_TIME);
+    }, QUIZ_MODAL_DISPLAY_TIME);
 
     return () => {
-      clearTimeout(fadeOutTimer);
-      clearTimeout(feedbackTimer);
+      clearTimeout(quizModalExitTimer);
+      if (closeTimer) {
+        clearTimeout(closeTimer);
+      }
     };
   }, [showFeedback, quizResult]);
 
+  // 결과 모달 표시 시 모든 점수 고정 (리렌더링으로 인한 깜박임 방지)
+  const [frozenPreviousScores, setFrozenPreviousScores] = React.useState({ 
+    teamAScore: previousTeamAScore, 
+    teamBScore: previousTeamBScore 
+  });
+  const [frozenNewScores, setFrozenNewScores] = React.useState({ 
+    teamAScore: previousTeamAScore, 
+    teamBScore: previousTeamBScore 
+  });
+
   // 3단계: 퀴즈 모달이 닫힌 후 결과 모달 표시
   useEffect(() => {
-    if (!hideQuizModal || !quizResult) return;
+    console.log('🔍 3단계 useEffect 체크:', { hideQuizModal, quizResult, quizResultType: typeof quizResult, quizResultKeys: quizResult ? Object.keys(quizResult) : 'null' });
+    if (!hideQuizModal || !quizResult) {
+      console.log('❌ 3단계 useEffect skip:', { hideQuizModal, quizResult: !!quizResult });
+      return;
+    }
 
-    console.log('QuizActivity - 3단계: 결과 모달 표시');
+    console.log('✅ QuizActivity - 3단계: setShowResultModal(true) 호출!');
+
+    // 점수 완전 고정 - 이후 리렌더링에도 절대 변경되지 않음
+    setFrozenPreviousScores({ teamAScore: previousTeamAScore, teamBScore: previousTeamBScore });
+    setFrozenNewScores(newScores);
     
+    // ref에도 저장
+    finalScoresRef.current = newScores;
+
     setQuizModalExiting(false);
     setShowResultModal(true);
-    setResultModalEntering(true);
-    
-    // 결과 모달 애니메이션 완료
-    setTimeout(() => {
-      setResultModalEntering(false);
-    }, 300);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hideQuizModal, quizResult]);
 
-  // 4단계: 결과 모달 표시 후 1초 뒤 다음 라운드로 진행
+  // 완료 플래그로 중복 호출 방지
+  const completedRef = React.useRef(false);
+
+  // 4단계: 결과 모달 표시 후 다음 라운드로 진행
   useEffect(() => {
+    console.log('🔍 4단계 useEffect 체크:', { showResultModal, quizResult, completed: completedRef.current });
     if (!showResultModal || !quizResult) return;
+    if (completedRef.current) return;
 
     console.log('QuizActivity - 4단계: 결과 모달 자동 진행 타이머 시작', { showResultModal, quizResult });
 
-    // 결과 모달 페이드아웃 시작 (800ms 후)
-    const fadeOutTimer = setTimeout(() => {
-      console.log('QuizActivity - 4단계: 결과 모달 페이드아웃 시작');
-      setResultFading(true);
-    }, RESULT_DISPLAY_TIME - 200);
+    // 결과 모달 fade-out 시작 (2100ms 후, 완료 400ms 전)
+    const fadeTimer = setTimeout(() => {
+      console.log('QuizActivity - 4단계: 결과 모달 fade-out 시작');
+      setResultModalFading(true);
+      // 이전 라운드 화면도 함께 fade-out 시작
+      onFadeOutStart?.();
+    }, RESULT_DISPLAY_TIME - 400);
 
-    // 결과 모달 완전 종료 및 다음 라운드 진행 (1초 후)
+    // 결과 모달 표시 후 다음 라운드 진행 (fade-out 완료 후)
     const resultTimer = setTimeout(() => {
+      if (completedRef.current) return;
       console.log('QuizActivity - 4단계: 결과 모달 종료, 다음 라운드 진행');
-      setShowResultModal(false);
-      setResultFading(false);
-      onComplete(quizResult.isCorrect);
-    }, RESULT_DISPLAY_TIME);
+      completedRef.current = true;
+      // ref에 저장된 최종 점수 사용
+      const scores = finalScoresRef.current;
+      console.log('QuizActivity - 최종 점수:', scores);
+      onComplete(quizResult.isCorrect, scores.teamAScore, scores.teamBScore);
+    }, RESULT_DISPLAY_TIME + 400); // fade-out 완료 후 호출
 
     return () => {
-      clearTimeout(fadeOutTimer);
+      clearTimeout(fadeTimer);
       clearTimeout(resultTimer);
     };
   }, [showResultModal, quizResult, onComplete]);
 
-  // 기존 Quiz 타입을 QuizData 타입으로 변환
-  const quizData: QuizData = {
-    quizId: `quiz-${Date.now()}`,
+  // 안전장치: 모든 단계 합산 시간 이후에도 진행되지 않으면 강제 진행
+  useEffect(() => {
+    if (!quizResult) return;
+    if (completedRef.current) return;
+
+    const watchdogDelay = FEEDBACK_DISPLAY_TIME + QUIZ_MODAL_DISPLAY_TIME + RESULT_DISPLAY_TIME + 500; // 총 약 7.2초
+    console.log('⏱️ Watchdog 시작, 타임아웃:', watchdogDelay);
+    
+    const watchdog = setTimeout(() => {
+      if (completedRef.current) {
+        console.log('⏱️ Watchdog - 이미 완료되어 skip');
+        return;
+      }
+      console.warn('⏱️ Watchdog: 결과 진행이 지연되어 강제 onComplete 실행');
+      completedRef.current = true;
+      const scores = finalScoresRef.current;
+      onComplete(quizResult.isCorrect, scores.teamAScore, scores.teamBScore);
+    }, watchdogDelay);
+
+    return () => clearTimeout(watchdog);
+  }, [quizResult, onComplete]);
+
+  // 기존 Quiz 타입을 QuizData 타입으로 변환 (useMemo로 메모이제이션)
+  const quizData: QuizData = React.useMemo(() => ({
+    quizId: `quiz-${quiz.question}`, // Date.now() 대신 question으로 고정
     quizType: 'multipleChoice',
     questionText: quiz.question,
     options: quiz.options.map(option => ({
       text: option,
       isCorrect: option === quiz.correctAnswer
     }))
-  };
+  }), [quiz]);
 
   return (
     <>
       {/* 퀴즈와 결과 모달 (딤 레이어는 App.tsx에서 처리) */}
-      {(quizResult || !hideQuizModal || showResultModal) && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
+      {(quizResult || !hideQuizModal || showResultModal) ? (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-[1004]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
           {/* 퀴즈 모달 - 숨김 상태가 아닐 때 표시 */}
           {!hideQuizModal && (
-            <div className={`${quizModalExiting ? 'animate-slide-out' : ''}`}>
+            <div style={{ 
+              transition: quizModalExiting ? 'opacity 0.3s ease-out, transform 0.3s ease-out' : 'none',
+              opacity: quizModalExiting ? 0 : 1,
+              transform: quizModalExiting ? 'scale(0.9)' : 'scale(1)'
+            }}>
               <QuizPopup
                 quiz={quizData}
                 team={playingTeam === Team.A ? 'A' : 'B'}
@@ -160,32 +302,46 @@ const QuizActivity: React.FC<QuizActivityProps> = ({ quiz, playingTeam, onComple
                 exitDelay={0}
                 onTimerChange={onTimerChange}
                 onTimeout={handleTimeout}
+                disableFeedback={true}
               />
             </div>
           )}
 
+          {/* 정오답 피드백 - 퀴즈 모달 위에 표시 */}
+          {showFeedback && quizResult && !hideQuizModal && (
+            <FeedbackToast
+              key={`feedback-${quizResult.status}-${quizResult.isCorrect}`}
+              status={quizResult.status}
+              isFading={feedbackFading || quizModalExiting}
+            />
+          )}
+
            {/* 점수 결과 모달 - 퀴즈 모달이 숨겨진 후 표시 */}
            {showResultModal && quizResult && (
-             <div className={`${resultModalEntering ? 'animate-slide-in' : ''}`}>
-               {console.log('QuizActivity - 결과 모달 렌더링 중', { showResultModal, quizResult, resultModalEntering })}
+             <div className="flex items-center justify-center z-[220]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+               {console.log('QuizActivity - 결과 모달 렌더링 중', {
+                 showResultModal,
+                 quizResult,
+                 resultModalFading,
+                 frozenPreviousScores,
+                 frozenNewScores
+               })}
                <QuizResultModal
                  status={quizResult.status}
                  teamName={teamName}
                  points={quizResult.isCorrect ? points.correct : points.incorrect}
-                 isFading={resultFading}
+                 isFading={resultModalFading}
+                 teamAScore={frozenNewScores.teamAScore}
+                 teamBScore={frozenNewScores.teamBScore}
+                 previousTeamAScore={frozenPreviousScores.teamAScore}
+                 previousTeamBScore={frozenPreviousScores.teamBScore}
+                 winningTeam={playingTeam === Team.A ? 'A' : 'B'}
                />
              </div>
            )}
         </div>
-      )}
+      ) : null}
       
-      {/* 정오답 피드백 */}
-      {showFeedback && quizResult && (
-        <FeedbackToast 
-          status={quizResult.status} 
-          isFading={feedbackFading}
-        />
-      )}
       
     </>
   );
@@ -207,13 +363,15 @@ const FeedbackToast: React.FC<{
   const { text, color } = getFeedbackConfig();
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[80]">
-      <div 
-        className={`px-12 py-6 rounded-full text-7xl font-black text-white ${color} ${isFading ? 'animate-feedback-fadeout' : 'animate-feedback-pop'}`}
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+      <div
+        className={`px-12 py-6 rounded-full text-7xl font-black text-white ${color}`}
         style={{
           textShadow: '0 4px 12px rgba(0,0,0,0.4)',
           filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.2))',
-          animationFillMode: isFading ? 'forwards' : 'none'
+          transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
+          opacity: isFading ? 0 : 1,
+          transform: isFading ? 'scale(0.9)' : 'scale(1)'
         }}
       >
         {text}

@@ -7,10 +7,10 @@ let ai: GoogleGenAI | null = null;
 try {
   // This will throw a ReferenceError in the browser because `process` is not defined.
   // We catch it so the app can run using local data without crashing.
-  const apiKey = (process as any).env.API_KEY || (process as any).env.GEMINI_API_KEY || (process as any).env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyDOlS4DW6Zq0mXl9oCN0YvB_Hu3sWlZKkU";
+  // Vite는 import.meta.env에서 환경 변수를 로드함
+  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process as any).env?.API_KEY || (process as any).env?.GEMINI_API_KEY || (process as any).env?.VITE_GEMINI_API_KEY;
   console.log("🔑 API Key Status:", apiKey ? "✅ Found" : "❌ Missing");
   console.log("🔑 API Key Preview:", apiKey ? `${apiKey.substring(0, 10)}...` : "None");
-  console.log("🔑 Full API Key:", apiKey ? apiKey : "None"); // 디버깅용 전체 키 출력
   
   if (apiKey && apiKey !== "YOUR_GEMINI_API_KEY_HERE") {
     ai = new GoogleGenAI({ apiKey });
@@ -346,19 +346,19 @@ Analyze the image and respond with:
     }
 
   } catch (error) {
-    console.warn("Error recognizing handwriting with AI:", error);
+    console.error("❌ Error recognizing handwriting with AI:", error);
     
     // 쿼터 초과 오류 감지
     if (error && typeof error === 'object' && 'message' in error) {
       const errorMessage = (error as any).message;
       if (errorMessage.includes('429') || errorMessage.includes('Quota exceeded')) {
-        console.warn("⚠️ Gemini API 쿼터가 초과되었습니다. 임시로 관대한 채점을 적용합니다.");
-        // 쿼터 초과 시에는 그림을 그렸다면 맞음으로 처리 (임시)
-        return true;
+        console.error("⚠️ Gemini API 쿼터가 초과되었습니다. 손글씨 인식 실패 - 틀림으로 처리합니다.");
+        return false;
       }
     }
     
     // 기타 오류 시 안전을 위해 틀림으로 처리
+    console.error("⚠️ 손글씨 인식 API 오류 발생 - 안전을 위해 틀림으로 처리합니다.");
     return false;
   }
 };

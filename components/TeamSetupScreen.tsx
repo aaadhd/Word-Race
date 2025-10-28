@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import type { Teams, Player, TeamColor, DragItem } from '../types/team-setup-types';
+import { playButtonClick } from '../utils/soundEffects.ts';
+import RippleButton from './RippleButton.tsx';
 
 // 재사용 가능한 Team Setup 컴포넌트
 interface TeamSetupScreenProps {
@@ -32,7 +34,7 @@ interface AlertModalProps {
 
 const AlertModal: React.FC<AlertModalProps> = ({ message, onClose }) => {
   return (
-    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
+    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" aria-modal="true" role="dialog">
       <div className="bg-white rounded-2xl shadow-2xl p-10 text-center w-full max-w-lg transform transition-all animate-fade-in-up">
         <div className="text-7xl mb-6">⚠️</div>
         <p className="text-3xl font-display text-primary-text leading-relaxed whitespace-pre-line mb-8">
@@ -61,7 +63,6 @@ interface PlayerCardProps {
 
 interface TeamBoxProps {
   title: string;
-  teamColor: string;
   players: Player[];
   team: TeamColor;
   onDrop: (targetTeam: TeamColor, targetIndex: number) => void;
@@ -70,13 +71,13 @@ interface TeamBoxProps {
   onDragEnd: () => void;
 }
 
-const PlayerCard: React.FC<PlayerCardProps> = ({ 
-  player, 
-  team, 
-  index, 
-  onDragStart, 
+const PlayerCard: React.FC<PlayerCardProps> = ({
+  player,
+  team,
+  index,
+  onDragStart,
   onDragEnd,
-  isDragging = false 
+  isDragging = false
 }) => {
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -89,11 +90,22 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
-      className={`flex flex-col items-center cursor-move transition-all duration-200 ${
-        isDragging ? 'opacity-50 scale-95' : 'hover:scale-105'
+      className={`flex flex-col items-center cursor-move transition-all duration-300 ${
+        isDragging ? 'opacity-50 scale-95 rotate-12' : ''
       }`}
+      style={{
+        animation: isDragging ? 'none' : 'float 3s ease-in-out infinite',
+        animationDelay: `${index * 0.1}s`
+      }}
     >
-      <div className="w-28 h-28 rounded-full bg-white flex justify-center items-center text-6xl border-4 border-gray-300 shadow-md">
+      <div className={`w-28 h-28 rounded-full bg-gradient-to-br from-white to-gray-50 flex justify-center items-center text-6xl border-4 shadow-xl transition-all duration-300 ${
+        isDragging ? 'border-yellow-500 scale-110' : 'border-gray-300'
+      }`}
+        style={{
+          animation: isDragging ? 'none' : 'wiggle 4s ease-in-out infinite',
+          animationDelay: `${index * 0.15}s`
+        }}
+      >
         {player.avatarEmoji}
       </div>
       <span className="mt-2 text-gray-700 font-sans font-bold text-base">{player.name}</span>
@@ -101,12 +113,11 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   );
 };
 
-const TeamBox: React.FC<TeamBoxProps> = ({ 
-  title, 
-  teamColor, 
-  players, 
-  team, 
-  onDrop, 
+const TeamBox: React.FC<TeamBoxProps> = ({
+  title,
+  players,
+  team,
+  onDrop,
   onDragOver,
   onDragStart,
   onDragEnd
@@ -130,16 +141,20 @@ const TeamBox: React.FC<TeamBoxProps> = ({
     onDrop(team, targetIndex);
   };
 
+  // Team A (blue) -> #3b82f6, Team B (red) -> #ef4444
+  const borderColorClass = team === 'blue' ? 'border-team-a' : 'border-team-b';
+  const textColorClass = team === 'blue' ? 'text-team-a' : 'text-team-b';
+
   return (
-    <div 
-      className={`bg-white/80 p-6 rounded-3xl shadow-xl text-center border-t-8 border-${teamColor}-400`}
+    <div
+      className={`bg-white/95 pt-3 px-3 pb-3 rounded-3xl shadow-2xl text-center border-t-8 ${borderColorClass}`}
       onDrop={handleDrop}
       onDragOver={onDragOver}
     >
-      <h3 className={`text-${teamColor}-600 text-5xl font-display mb-4 flex items-center justify-center gap-3`}>
+      <h3 className={`${textColorClass} text-4xl font-display mb-2 flex items-center justify-center gap-3`}>
         {title}
       </h3>
-      <div className="grid grid-cols-4 grid-rows-2 gap-6 p-6 bg-gray-200/50 rounded-2xl min-h-[280px]">
+      <div className="grid grid-cols-4 grid-rows-2 gap-6 p-4 bg-gray-200/50 rounded-2xl">
         {players.map((player, index) => (
           <PlayerCard
             key={player.id}
@@ -243,44 +258,48 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
   };
 
   return (
-    <div
-      className="w-full h-full flex flex-col justify-start items-center p-4 pt-16 relative"
-      style={{
-        backgroundImage: 'url(/images/background.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
+    <div className="w-full h-full flex flex-col items-center relative">
+      <img
+        src="/images/background.png"
+        alt="background"
+        className="absolute"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center bottom',
+          left: 0,
+          top: 0,
+          zIndex: -1
+        }}
+      />
       {alertMessage && <AlertModal message={alertMessage} onClose={handleCloseAlert} />}
 
-      <div className="flex items-center justify-between w-full max-w-6xl mb-16 relative z-10">
-        <h1 className="text-6xl font-display text-accent-yellow drop-shadow-lg">{title}</h1>
+      <div className="flex items-center justify-center w-full max-w-6xl mb-8 relative z-10 pt-16" style={{ marginTop: '3%' }}>
+        <h1 className="text-6xl font-display text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.9), -1px -1px 2px rgba(0,0,0,0.5)' }}>{title}</h1>
         {onClose && (
           <button
             onClick={onClose}
-            className="px-6 py-3 text-xl font-display text-white bg-gradient-to-r from-gray-400 to-gray-500 rounded-full shadow-xl hover:scale-105 transition-transform"
+            className="absolute right-0 px-6 py-3 text-xl font-display text-white bg-gradient-to-r from-gray-400 to-gray-500 rounded-full shadow-xl hover:scale-105 transition-transform"
           >
             {buttonTexts.close}
           </button>
         )}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
-        <TeamBox 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl items-center pb-32" style={{ marginTop: '2%' }}>
+        <TeamBox
           title={teamNames.blue}
-          teamColor="blue" 
-          players={teams.blue} 
+          players={teams.blue}
           team="blue"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         />
-        <TeamBox 
+        <TeamBox
           title={teamNames.red}
-          teamColor="red" 
-          players={teams.red} 
+          players={teams.red}
           team="red"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -289,19 +308,25 @@ const TeamSetupScreen: React.FC<TeamSetupScreenProps> = ({
         />
       </div>
       
-      <div className="absolute bottom-8 left-8 right-8 flex justify-between">
-        <button
-          onClick={onShuffle}
-          className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full shadow-2xl hover:scale-105 transition-transform"
+      <div className="fixed bottom-8 left-8 right-8 flex justify-between z-50">
+        <RippleButton
+          onClick={() => {
+            playButtonClick();
+            onShuffle();
+          }}
+          className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full shadow-2xl active:scale-90 transition-transform duration-200 border-4 border-white"
         >
           {buttonTexts.shuffle}
-        </button>
-        <button
-          onClick={handleStartGame}
-          className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-green-400 to-emerald-500 rounded-full shadow-2xl hover:scale-105 transition-transform"
+        </RippleButton>
+        <RippleButton
+          onClick={() => {
+            playButtonClick();
+            handleStartGame();
+          }}
+          className="px-10 py-4 text-3xl font-display text-white bg-gradient-to-r from-green-400 to-emerald-500 rounded-full shadow-2xl active:scale-90 transition-transform duration-200 border-4 border-white"
         >
           {buttonTexts.start}
-        </button>
+        </RippleButton>
       </div>
     </div>
   );

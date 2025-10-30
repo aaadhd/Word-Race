@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Team } from '../types.ts';
 import type { Scores } from '../types.ts';
-import { StarIcon } from './icons/StarIcon.tsx';
 import Confetti from './Confetti.tsx';
 import { playGameEnd, playWinnerAnnounce, playButtonClick } from '../utils/soundEffects.ts';
 
@@ -60,25 +59,62 @@ const GameEnd: React.FC<GameEndProps> = ({ scores, onPlayAgain }) => {
         }}
       />
       {winner && <Confetti />}
-      <h1 className="text-5xl font-display text-white mb-6 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.9), -2px -2px 4px rgba(0,0,0,0.6)' }}>Game Over!</h1>
-      <div className="flex items-center justify-center gap-6 px-6 py-5 bg-white/95 rounded-3xl shadow-2xl border-4 border-yellow-400">
-        <StarIcon className="w-16 h-16 text-yellow-400 animate-pulse drop-shadow-lg" />
+      {/* Local animated styles (no icons) */}
+      <style>
+        {`
+          @keyframes titleGradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+          @keyframes beamSweep { 0%{transform:translate3d(-120%,0,0) skewX(-20deg); opacity:0} 30%{opacity:.35} 60%{opacity:.15} 100%{transform:translate3d(180%,0,0) skewX(-20deg); opacity:0} }
+          @keyframes cardGlowPulse { 0%,100%{box-shadow:0 0 0 rgba(255,255,255,0)} 50%{box-shadow:0 0 36px rgba(255,255,255,.35)} }
+          @keyframes numberPop { 0%{transform:scale(1)} 40%{transform:scale(1.08)} 100%{transform:scale(1)} }
+          @keyframes ribbonWave { 0%{background-position:0 0} 100%{background-position:400% 0} }
+        `}
+      </style>
+      <h1
+        className="text-5xl font-display mb-6"
+        style={{
+          backgroundImage: 'linear-gradient(90deg, #22d3ee, #a78bfa, #f59e0b, #22d3ee)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+          WebkitTextFillColor: 'transparent',
+          backgroundSize: '300% 300%',
+          animation: 'titleGradientShift 3.2s ease-in-out infinite',
+          textShadow: '0 6px 18px rgba(0,0,0,0.55)'
+        }}
+      >
+        Game Over!
+      </h1>
+      {/* Winner banner without icons */}
+      <div className="relative flex items-center justify-center gap-6 px-8 py-6 bg-white/95 rounded-3xl shadow-2xl border-4 border-yellow-400 overflow-hidden">
+        {/* moving sheen */}
+        <div aria-hidden className="pointer-events-none absolute inset-0" style={{ overflow: 'hidden', borderRadius: '20px' }}>
+          <div style={{ position: 'absolute', top: '-20%', left: 0, width: '45%', height: '140%', background: 'linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)', filter: 'blur(6px)', animation: 'beamSweep 2.2s ease-in-out 0.2s infinite' }} />
+        </div>
         {winnerMessage()}
-        <StarIcon className="w-16 h-16 text-yellow-400 animate-pulse drop-shadow-lg" />
       </div>
 
       <div className="flex justify-center w-full max-w-3xl mt-6 mb-6 gap-6 px-4">
-        <div className="flex flex-col items-center bg-white/95 p-6 rounded-3xl shadow-2xl border-4 border-team-a flex-1 max-w-[240px]">
+        <div className="relative flex flex-col items-center bg-white/95 p-6 rounded-3xl shadow-2xl border-4 border-team-a flex-1 max-w-[240px]" style={{ animation: (scores[Team.A] >= scores[Team.B]) ? 'cardGlowPulse 1.6s ease-in-out infinite' : undefined }}>
             <h3 className="text-4xl font-display text-team-a mb-1">Team A</h3>
-            <p className="text-8xl font-display my-3 text-gray-800">{scores[Team.A]}</p>
+            <p className="text-8xl font-display my-3 text-gray-800" style={{ animation: (scores[Team.A] >= scores[Team.B]) ? 'numberPop 0.7s ease' : undefined }}>{scores[Team.A]}</p>
             <p className="text-2xl font-semibold text-gray-600">Points</p>
+            {/* sheen */}
+            <div aria-hidden className="pointer-events-none absolute inset-0" style={{ overflow: 'hidden', borderRadius: '18px' }}>
+              <div style={{ position: 'absolute', top: '-25%', left: 0, width: '50%', height: '150%', background: 'linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)', filter: 'blur(6px)', animation: 'beamSweep 2.4s ease-in-out 0.4s infinite' }} />
+            </div>
         </div>
-        <div className="flex flex-col items-center bg-white/95 p-6 rounded-3xl shadow-2xl border-4 border-team-b flex-1 max-w-[240px]">
+        <div className="relative flex flex-col items-center bg-white/95 p-6 rounded-3xl shadow-2xl border-4 border-team-b flex-1 max-w-[240px]" style={{ animation: (scores[Team.B] >= scores[Team.A]) ? 'cardGlowPulse 1.6s ease-in-out infinite' : undefined }}>
             <h3 className="text-4xl font-display text-team-b mb-1">Team B</h3>
-            <p className="text-8xl font-display my-3 text-gray-800">{scores[Team.B]}</p>
+            <p className="text-8xl font-display my-3 text-gray-800" style={{ animation: (scores[Team.B] >= scores[Team.A]) ? 'numberPop 0.7s ease' : undefined }}>{scores[Team.B]}</p>
             <p className="text-2xl font-semibold text-gray-600">Points</p>
+            <div aria-hidden className="pointer-events-none absolute inset-0" style={{ overflow: 'hidden', borderRadius: '18px' }}>
+              <div style={{ position: 'absolute', top: '-25%', left: 0, width: '50%', height: '150%', background: 'linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)', filter: 'blur(6px)', animation: 'beamSweep 2.4s ease-in-out 0.4s infinite' }} />
+            </div>
         </div>
       </div>
+
+      {/* subtle animated ribbon background under the banner */}
+      <div aria-hidden className="absolute top-[140px] left-1/2 -translate-x-1/2 w-[820px] h-[10px] rounded-full" style={{ backgroundImage: 'linear-gradient(90deg, rgba(34,211,238,.25), rgba(167,139,250,.35), rgba(245,158,11,.25), rgba(34,211,238,.25))', backgroundSize: '400% 100%', filter: 'blur(12px)', animation: 'ribbonWave 6s linear infinite' }} />
 
       <button
         onClick={() => {

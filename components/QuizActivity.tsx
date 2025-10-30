@@ -18,7 +18,7 @@ interface QuizActivityProps {
 const QUIZ_TIME_SECONDS = 15;
 const FEEDBACK_DISPLAY_TIME = 1200; // 1.2초 - 피드백 토스트 표시 시간
 const QUIZ_MODAL_DISPLAY_TIME = 3000; // 3초 - 퀴즈 모달(정답/오답 색상) 유지 시간
-const RESULT_DISPLAY_TIME = 2500; // 2.5초 (점수 카운팅 800ms + 카운팅 완료 후 유지 1.7초)
+const RESULT_DISPLAY_TIME = 3200; // 퀴즈 결과(점수 상승) 모달 표시 시간을 연장하여 충분히 확인 가능하게 함
 
 type QuizResult = {
   isCorrect: boolean;
@@ -209,7 +209,7 @@ const QuizActivity: React.FC<QuizActivityProps> = ({
 
     console.log('QuizActivity - 4단계: 결과 모달 자동 진행 타이머 시작', { showResultModal, quizResult });
 
-    // 결과 모달 fade-out 시작 (2100ms 후, 완료 400ms 전)
+    // 결과 모달 fade-out 시작 (RESULT_DISPLAY_TIME - 400ms 시점)
     const fadeTimer = setTimeout(() => {
       console.log('QuizActivity - 4단계: 결과 모달 fade-out 시작');
       setResultModalFading(true);
@@ -217,7 +217,9 @@ const QuizActivity: React.FC<QuizActivityProps> = ({
       onFadeOutStart?.();
     }, RESULT_DISPLAY_TIME - 400);
 
-    // 결과 모달 표시 후 다음 라운드 진행 (fade-out 완료 후)
+    // 결과 모달 표시 후 다음 라운드 진행
+    // 기존: RESULT_DISPLAY_TIME + 400 (fade-out 완료 시점)
+    // 조정: fade-out 시작과 동시에 다음 라운드 진행을 트리거하여 Next Round를 더 일찍 표시
     const resultTimer = setTimeout(() => {
       if (completedRef.current) return;
       console.log('QuizActivity - 4단계: 결과 모달 종료, 다음 라운드 진행');
@@ -226,7 +228,7 @@ const QuizActivity: React.FC<QuizActivityProps> = ({
       const scores = finalScoresRef.current;
       console.log('QuizActivity - 최종 점수:', scores);
       onComplete(quizResult.isCorrect, scores.teamAScore, scores.teamBScore);
-    }, RESULT_DISPLAY_TIME + 400); // fade-out 완료 후 호출
+    }, RESULT_DISPLAY_TIME - 400); // fade-out 시작 시점에 onComplete 호출
 
     return () => {
       clearTimeout(fadeTimer);

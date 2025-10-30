@@ -1,12 +1,40 @@
 // Web Audio API를 사용한 게임 효과음 유틸리티
 
 let audioContext: AudioContext | null = null;
+let audioUnlocked = false;
 
 const getAudioContext = () => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   return audioContext;
+};
+
+// 첫 사용자 제스처에서 오디오를 활성화(resume)하는 유틸
+export const ensureAudioUnlocked = () => {
+  if (audioUnlocked) return;
+  const ctx = getAudioContext();
+
+  const tryResume = async () => {
+    try {
+      if (ctx.state !== 'running') {
+        await ctx.resume();
+      }
+    } catch {}
+
+    if (ctx.state === 'running') {
+      audioUnlocked = true;
+      window.removeEventListener('pointerdown', tryResume);
+      window.removeEventListener('touchstart', tryResume);
+      window.removeEventListener('keydown', tryResume);
+      window.removeEventListener('click', tryResume);
+    }
+  };
+
+  window.addEventListener('pointerdown', tryResume, { once: false, passive: true });
+  window.addEventListener('touchstart', tryResume, { once: false, passive: true });
+  window.addEventListener('keydown', tryResume, { once: false });
+  window.addEventListener('click', tryResume, { once: false });
 };
 
 // 버튼 클릭 사운드 (경쾌한 "딸깍")
@@ -276,6 +304,36 @@ export const playHover = () => {
     oscillator.type = 'sine';
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.05);
+  } catch (error) {
+    console.log('Sound not supported');
+  }
+};
+
+// 점수 상승 "와!" 효과음
+export const playWow = () => {
+  try {
+    const ctx = getAudioContext();
+
+    // 간단한 환호 느낌: 빠른 두 음 + 짧은 상승 휘파람 느낌
+    const tones = [
+      { freq: 880, time: 0, duration: 0.1 },   // A5
+      { freq: 1175, time: 0.12, duration: 0.12 } // D6 근처
+    ];
+
+    tones.forEach(note => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + note.time);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + note.time + note.duration);
+
+      osc.type = 'sine';
+      osc.start(ctx.currentTime + note.time);
+      osc.stop(ctx.currentTime + note.time + note.duration);
+    });
   } catch (error) {
     console.log('Sound not supported');
   }

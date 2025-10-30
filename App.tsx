@@ -20,6 +20,7 @@ import CaptureMode from './components/CaptureMode.tsx';
 import PageTransition from './components/PageTransition.tsx';
 import BGMPlayer from './components/BGMPlayer.tsx';
 import RoundLoading from './components/RoundLoading.tsx';
+import { ensureAudioUnlocked } from './utils/soundEffects.ts';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.SETUP);
@@ -43,6 +44,9 @@ const App: React.FC = () => {
 
   // 브라우저 크기에 맞춰 스케일 계산
   useEffect(() => {
+    // 오디오 자동재생 정책 우회: 첫 사용자 입력에서 AudioContext resume
+    ensureAudioUnlocked();
+
     const calculateScale = () => {
       const newScale = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
       setScale(newScale);
@@ -142,15 +146,12 @@ const App: React.FC = () => {
       });
       
       console.log('점수 업데이트:', { teamAScore, teamBScore });
-      setScores({
-        [Team.A]: scores[Team.A] + teamAScore,
-        [Team.B]: scores[Team.B] + teamBScore
-      });
+      setScores(prev => ({
+        [Team.A]: prev[Team.A] + teamAScore,
+        [Team.B]: prev[Team.B] + teamBScore
+      }));
       
-      console.log('✅ 점수 업데이트 완료:', {
-        'Team A': scores[Team.A] + teamAScore,
-        'Team B': scores[Team.B] + teamBScore
-      });
+      console.log('✅ 점수 업데이트 완료 (함수형 업데이트 적용)');
     }
 
     // Quiz가 포함되어 있고 winner가 있으면 Quiz로 이동
@@ -197,15 +198,15 @@ const App: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     setQuizTaker(null);
 
-    // 로딩 화면 표시 시간
+    // 로딩 화면 표시 시간 (약간 단축 가능)
     await new Promise(resolve => setTimeout(resolve, 350));
 
     // 백그라운드에서 데이터 로드
     if (shouldContinue) {
         const data = await fetchRoundData();
 
-        // 최소 로딩 시간 보장 (1초)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 최소 로딩 시간 보장 (0.5초로 단축)
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         if (data) {
           // 다음 라운드 데이터로 업데이트 (상태 변경 전에 준비)
@@ -332,6 +333,7 @@ const App: React.FC = () => {
   }
 
   const shouldShowPause = gameState === GameState.TRACING || gameState === GameState.QUIZ;
+  const hideHud = (isLoadingNextRound || isFadingOutPreviousRound) && gameState === GameState.TRACING && !quizIncluded;
   const shouldShowMenu = gameState === GameState.TRACING || gameState === GameState.QUIZ;
   const shouldShowExit = gameState === GameState.SETUP || gameState === GameState.TITLE_SCREEN || gameState === GameState.TEAM_SETUP || gameState === GameState.GAME_END;
 
@@ -484,7 +486,7 @@ const App: React.FC = () => {
           />
         )}
 
-        {gameState !== GameState.SETUP && gameState !== GameState.TITLE_SCREEN && gameState !== GameState.TEAM_SETUP && !isCaptureMode && (
+        {gameState !== GameState.SETUP && gameState !== GameState.TITLE_SCREEN && gameState !== GameState.TEAM_SETUP && !isCaptureMode && !hideHud && (
           <GameHeader
             title={getHeaderTitle()}
             currentRound={showTracingTimer ? undefined : (gameState !== GameState.GAME_END ? currentRound : undefined)}
@@ -546,13 +548,13 @@ const App: React.FC = () => {
         )}
 
         {/* Score Display */}
-        {gameState !== GameState.SETUP && gameState !== GameState.TITLE_SCREEN && gameState !== GameState.TEAM_SETUP && gameState !== GameState.ROUND_START && !isCaptureMode && (
+        {gameState !== GameState.SETUP && gameState !== GameState.TITLE_SCREEN && gameState !== GameState.TEAM_SETUP && gameState !== GameState.ROUND_START && !isCaptureMode && !hideHud && (
           <>
             <div className="absolute top-[88px] left-4 z-10">
               <div className="flex items-center gap-4 p-2 pl-4 text-2xl font-bold text-white bg-team-a rounded-r-full">
                 <span className="font-display">Team A</span>
                 <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                  <span>{scores[Team.A]}</span>
+                  <span style={{ minWidth: '3ch', textAlign: 'right' }}>{scores[Team.A]}</span>
                 </div>
               </div>
             </div>
@@ -560,7 +562,7 @@ const App: React.FC = () => {
             <div className="absolute top-[88px] right-4 z-10">
               <div className="flex items-center gap-4 p-2 pr-4 text-2xl font-bold text-white bg-team-b rounded-l-full">
                 <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                  <span>{scores[Team.B]}</span>
+                  <span style={{ minWidth: '3ch', textAlign: 'right' }}>{scores[Team.B]}</span>
                 </div>
                 <span className="font-display">Team B</span>
               </div>
@@ -632,16 +634,16 @@ const App: React.FC = () => {
               <div className="absolute top-[88px] left-4 z-[50]">
                 <div className="flex items-center gap-4 p-2 pl-4 text-2xl font-bold text-white bg-team-a rounded-r-full">
                   <span className="font-display">Team A</span>
-                  <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                    <span>{previousScores[Team.A]}</span>
+                <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
+                  <span style={{ minWidth: '3ch', textAlign: 'right' }}>{previousScores[Team.A]}</span>
                   </div>
                 </div>
               </div>
 
               <div className="absolute top-[88px] right-4 z-[50]">
                 <div className="flex items-center gap-4 p-2 pr-4 text-2xl font-bold text-white bg-team-b rounded-l-full">
-                  <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
-                    <span>{previousScores[Team.B]}</span>
+                <div className="flex items-center gap-2 px-4 py-1 bg-white/30 rounded-full">
+                  <span style={{ minWidth: '3ch', textAlign: 'right' }}>{previousScores[Team.B]}</span>
                   </div>
                   <span className="font-display">Team B</span>
                 </div>
@@ -715,14 +717,14 @@ const App: React.FC = () => {
                 right: 0,
                 bottom: 0,
                 pointerEvents: 'none',
-                zIndex: 1000
+                zIndex: 100000
               }}
             >
               {/* 딤 레이어 */}
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[1000]" />
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[100001]" />
               
               {/* 로딩 화면 */}
-              <div className="absolute inset-0 z-[2000] flex items-center justify-center">
+              <div className="absolute inset-0 z-[100002] flex items-center justify-center">
                 <RoundLoading nextRound={currentRound + 1} />
               </div>
             </motion.div>

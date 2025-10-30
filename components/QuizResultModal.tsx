@@ -109,7 +109,7 @@ const QuizResultModalComponent: React.FC<QuizResultModalProps> = ({
               from={previousTeamAScore}
               to={teamAScore}
               duration={800}
-              playSound={false}
+              playSound={true}
             />
           </div>
           {winningTeam === 'A' && (
@@ -130,7 +130,7 @@ const QuizResultModalComponent: React.FC<QuizResultModalProps> = ({
               from={previousTeamBScore}
               to={teamBScore}
               duration={800}
-              playSound={false}
+              playSound={true}
             />
           </div>
           {winningTeam === 'B' && (

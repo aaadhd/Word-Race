@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { ensureAudioUnlocked } from '../utils/soundEffects.ts';
 
 interface CountingNumberProps {
   from: number;
@@ -12,6 +13,35 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
   const [count, setCount] = useState(from);
   const [isPulsing, setIsPulsing] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastTickAtRef = useRef<number>(0);
+
+  // Counting 전 오디오 컨텍스트가 잠겨있지 않도록 보장
+  useEffect(() => {
+    ensureAudioUnlocked();
+  }, []);
+
+  // 이 컴포넌트 전용 오디오 컨텍스트 재사용(브라우저 정책 친화적)
+  const getCtx = () => {
+    // 전역 unlock이 된 뒤 생성하는 것이 안전
+    try {
+      // 단일 인스턴스 보장
+      if (!(window as any).__countingAudioCtx) {
+        (window as any).__countingAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      return (window as any).__countingAudioCtx as AudioContext;
+    } catch {
+      return null;
+    }
+  };
+
+  const resumeCtxIfNeeded = async (ctx: AudioContext | null) => {
+    if (!ctx) return;
+    try {
+      if (ctx.state !== 'running') {
+        await ctx.resume();
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     console.log('🔢 CountingNumber 시작:', { from, to, duration });
@@ -27,16 +57,26 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
     }
 
     // 각 숫자당 표시 시간 (ms)
-    const timePerStep = duration / Math.abs(difference);
+    const timePerStepRaw = duration / Math.abs(difference);
+    const timePerStep = Math.max(50, timePerStepRaw); // 최소 50ms로 상향하여 안정적 재생 보장
     let currentValue = from;
     const direction = difference > 0 ? 1 : -1;
     let timerId: NodeJS.Timeout | null = null;
     let isCancelled = false;
 
     // 카지노 틱틱 사운드 함수 - 점점 높아지는 소리
-    const playTickSound = (currentStep: number, totalSteps: number) => {
+    const playTickSound = async (currentStep: number, totalSteps: number) => {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = getCtx();
+        if (!audioContext) return;
+        await resumeCtxIfNeeded(audioContext);
+
+        // 너무 촘촘한 호출은 스킵 (동시 생성/드랍 방지)
+        const nowMs = performance.now();
+        if (nowMs - lastTickAtRef.current < 55) {
+          return; // 최소 간격 55ms
+        }
+        lastTickAtRef.current = nowMs;
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
 
@@ -44,25 +84,35 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
         gainNode.connect(audioContext.destination);
 
         // 진행도에 따라 점점 높아지는 음
-        const progress = currentStep / totalSteps;
-        const frequency = 800 + (progress * 600); // 800Hz에서 1400Hz로 점점 높아짐
+        const progress = currentStep / Math.max(1, totalSteps);
+        const frequency = 900 + (progress * 700); // 900Hz → 1600Hz로 점점 높아짐
         
-        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.12, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.025);
+        const startAt = audioContext.currentTime + 0.005; // 오디오 타임라인에 살짝 여유
+        const dur = 0.07; // 약간 더 길게
+        oscillator.frequency.setValueAtTime(frequency, startAt);
+        gainNode.gain.setValueAtTime(0.18, startAt);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startAt + dur);
 
-        oscillator.type = 'sine'; // sine으로 부드럽게
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.025);
+        oscillator.type = 'triangle'; // tick이 더 잘 들리도록
+        oscillator.start(startAt);
+        oscillator.stop(startAt + dur);
+        oscillator.onended = () => {
+          try {
+            oscillator.disconnect();
+            gainNode.disconnect();
+          } catch {}
+        };
       } catch (error) {
         console.log('Audio not supported');
       }
     };
 
     // 카운팅 완료 사운드 (띠링!) - 더 명확하고 기분 좋은 소리
-    const playCompleteSound = () => {
+    const playCompleteSound = async () => {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const audioContext = getCtx();
+        if (!audioContext) return;
+        await resumeCtxIfNeeded(audioContext);
 
         // 성공 사운드 - 올라가는 아르페지오
         const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
@@ -76,12 +126,18 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
 
           const startTime = audioContext.currentTime + index * 0.06;
           oscillator.frequency.setValueAtTime(freq, startTime);
-          gainNode.gain.setValueAtTime(0.2, startTime);
+          gainNode.gain.setValueAtTime(0.28, startTime);
           gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
 
           oscillator.type = 'sine';
           oscillator.start(startTime);
           oscillator.stop(startTime + 0.4);
+          oscillator.onended = () => {
+            try {
+              oscillator.disconnect();
+              gainNode.disconnect();
+            } catch {}
+          };
         });
       } catch (error) {
         console.log('Audio not supported');
@@ -104,7 +160,7 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
 
       // 숫자가 바뀔 때마다 틱 소리 (진행도에 따라 음이 높아짐)
       if (playSound) {
-        playTickSound(stepCount, totalSteps);
+        void playTickSound(stepCount, totalSteps);
       }
 
       if (currentValue !== to) {
@@ -112,9 +168,7 @@ const CountingNumber: React.FC<CountingNumberProps> = ({ from, to, duration = 80
       } else {
         // 카운팅 완료 시 띠링 소리 (약간의 딜레이 후)
         if (playSound) {
-          setTimeout(() => {
-            playCompleteSound();
-          }, 50);
+          setTimeout(() => { void playCompleteSound(); }, 50);
         }
         // 완료 시 최종 펄스 효과
         setIsPulsing(true);

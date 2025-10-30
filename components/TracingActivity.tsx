@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { RoundData, TracingResult } from '../types.ts';
 import { Team, GameMode } from '../types.ts';
 import DrawingCanvas from './TracingCanvas.tsx';
@@ -9,7 +10,7 @@ import CountingNumber from './CountingNumber.tsx';
 import RoundLoading from './RoundLoading.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const RESULT_DISPLAY_TIME = 2500; // 퀴즈 포함 모드와 동일한 시간
+const RESULT_DISPLAY_TIME = 3200; // 점수판 모달 유지 시간을 더 늘려 충분한 확인 시간 제공
 const LOADING_SCREEN_TIME = 1500; // 로딩 화면 표시 시간
 
 interface DrawingActivityProps {
@@ -82,6 +83,9 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   const [videosLoaded, setVideosLoaded] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
 
+  // Portal 루트: 활동 영역(#stage)로 우선 포털, 없으면 body로 폴백
+  const portalRoot = typeof document !== 'undefined' ? (document.getElementById('stage') || document.body) : null;
+
   // 라운드 시작시각을 isPaused가 풀리는 순간 동기화하여 설정
   useEffect(() => {
     if (!isPaused && roundStartAtMs == null) {
@@ -120,6 +124,8 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
   useEffect(() => {
     setVideosLoaded(true);
   }, [currentRound]);
+
+  // (제거) 와! 효과음은 사용하지 않음
 
   const handleTeamADone = (hasDrawn: boolean, accuracy: number, canvasDataUrl: string) => {
     if (teamADone) return;
@@ -256,7 +262,10 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
 
       console.log('퀴즈 미포함 모드 - 점수 계산:', { teamAScore, teamBScore, winner, gameMode });
 
-      setCalculatedScores({ teamA: teamAScore, teamB: teamBScore });
+      // 상태 업데이트는 비동기이므로, 이후 타이머 콜백에서 사용할 수 있도록
+      // 로컬 상수로 고정해 두고 이를 참조한다 (stale state 방지)
+      const localScores = { teamA: teamAScore, teamB: teamBScore };
+      setCalculatedScores(localScores);
       setShowResultModal(false);
       setShowScoreModal(true);
 
@@ -271,10 +280,10 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         setTimeout(() => {
           setShowLoadingScreen(false);
 
-          // 현재 점수를 포함한 결과를 생성
+          // 현재 점수를 포함한 결과를 생성 (stale state 대신 localScores 사용)
           const resultsWithScores = finalResults?.map(result => ({
             ...result,
-            points: result.team === Team.A ? calculatedScores.teamA : calculatedScores.teamB
+            points: result.team === Team.A ? localScores.teamA : localScores.teamB
           }));
 
           onComplete(winner, resultsWithScores);
@@ -544,81 +553,93 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
         </>
       )}
 
-      {/* 통합 딤 레이어 - Result Modal 또는 Score Modal이 표시될 때 */}
-      {((finalResults && !hideResultModal && !isQuizMode && showResultModal) || (!quizIncluded && showScoreModal)) && (
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[45]" />
+      {/* 통합 딤 레이어 - Result Modal 또는 Score Modal이 표시될 때 (전역 오버레이로 승격) */}
+      {portalRoot && ((finalResults && !hideResultModal && !isQuizMode && showResultModal) || (!quizIncluded && showScoreModal)) && (
+        createPortal(
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[99999]"
+            style={{ position: 'absolute' }}
+          />,
+          portalRoot
+        )
       )}
 
       {/* Result Modal - 퀴즈 모드에서는 숨김 */}
-      {finalResults && !hideResultModal && !isQuizMode && showResultModal && (
-        <div className="absolute inset-0 z-[46]">
-          <RoundResult
-            winner={winner}
-            results={finalResults}
-            onContinue={handleContinueFromModal}
-            gameMode={gameMode}
-            word={roundData.word}
-            wordImage={roundData.wordImage}
-            showButton={quizIncluded}
-            noQuiz={winner === null && quizIncluded}
-          />
-        </div>
+      {portalRoot && finalResults && !hideResultModal && !isQuizMode && showResultModal && (
+        createPortal(
+          <div className="absolute inset-0 z-[100000] flex items-center justify-center" style={{ position: 'absolute' }}>
+            <RoundResult
+              winner={winner}
+              results={finalResults}
+              onContinue={handleContinueFromModal}
+              gameMode={gameMode}
+              word={roundData.word}
+              wordImage={roundData.wordImage}
+              showButton={quizIncluded}
+              noQuiz={winner === null && quizIncluded}
+            />
+          </div>,
+          portalRoot
+        )
       )}
 
       {/* Score Modal - 퀴즈 미포함 모드에서만 표시 */}
-      {!quizIncluded && showScoreModal && (
-        <div className="absolute inset-0 z-[46] flex items-center justify-center pointer-events-none">
-          <div className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-2xl pointer-events-auto">
-            <h1 className="text-5xl font-display text-accent-yellow drop-shadow-lg mb-4">
-              Points Earned!
-            </h1>
-            
-            <div className="flex justify-center gap-8 mt-8">
-              {/* Team A Score */}
-              <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
-                calculatedScores.teamA > calculatedScores.teamB ? 'border-team-a bg-team-a/10 scale-105' : 'border-gray-300 bg-gray-50'
-              } transition-all duration-300`}>
-                <h3 className="text-2xl font-display text-team-a mb-2">Team A</h3>
-                <div className="text-6xl font-display text-team-a tabular-nums">
-                  <CountingNumber
-                    key={`teamA-${previousTeamAScore}-${previousTeamAScore + calculatedScores.teamA}`}
-                    from={previousTeamAScore}
-                    to={previousTeamAScore + calculatedScores.teamA}
-                    duration={800}
-                    playSound={true}
-                  />
-                </div>
-                {calculatedScores.teamA > 0 && (
-                  <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
-                    +{calculatedScores.teamA} pts!
+      {portalRoot && !quizIncluded && showScoreModal && (
+        createPortal(
+          <div className="absolute inset-0 z-[100000] flex items-center justify-center pointer-events-none" style={{ position: 'absolute' }}>
+            <div className="bg-white rounded-3xl shadow-2xl p-10 text-center w-full max-w-2xl pointer-events-auto">
+              <h1 className="text-5xl font-display text-accent-yellow drop-shadow-lg mb-4">
+                Points Earned!
+              </h1>
+              
+              <div className="flex justify-center gap-8 mt-8">
+                {/* Team A Score */}
+                <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
+                  calculatedScores.teamA > calculatedScores.teamB ? 'border-team-a bg-team-a/10 scale-105' : 'border-gray-300 bg-gray-50'
+                } transition-all duration-300`}>
+                  <h3 className="text-2xl font-display text-team-a mb-2">Team A</h3>
+                  <div className="text-6xl font-display text-team-a tabular-nums">
+                    <CountingNumber
+                      key={`teamA-${previousTeamAScore}-${previousTeamAScore + calculatedScores.teamA}`}
+                      from={previousTeamAScore}
+                      to={previousTeamAScore + calculatedScores.teamA}
+                      duration={800}
+                      playSound={true}
+                    />
                   </div>
-                )}
+                  {calculatedScores.teamA > 0 && (
+                    <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
+                      +{calculatedScores.teamA} pts!
+                    </div>
+                  )}
+                </div>
+
+                {/* Team B Score */}
+                <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
+                  calculatedScores.teamB > calculatedScores.teamA ? 'border-team-b bg-team-b/10 scale-105' : 'border-gray-300 bg-gray-50'
+                } transition-all duration-300`}>
+                  <h3 className="text-2xl font-display text-team-b mb-2">Team B</h3>
+                  <div className="text-6xl font-display text-team-b tabular-nums">
+                    <CountingNumber
+                      key={`teamB-${previousTeamBScore}-${previousTeamBScore + calculatedScores.teamB}`}
+                      from={previousTeamBScore}
+                      to={previousTeamBScore + calculatedScores.teamB}
+                      duration={800}
+                      playSound={true}
+                    />
+                  </div>
+                  {calculatedScores.teamB > 0 && (
+                    <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
+                      +{calculatedScores.teamB} pts!
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Team B Score */}
-              <div className={`flex flex-col items-center p-6 rounded-2xl border-4 min-w-[180px] ${
-                calculatedScores.teamB > calculatedScores.teamA ? 'border-team-b bg-team-b/10 scale-105' : 'border-gray-300 bg-gray-50'
-              } transition-all duration-300`}>
-                <h3 className="text-2xl font-display text-team-b mb-2">Team B</h3>
-                <div className="text-6xl font-display text-team-b tabular-nums">
-                  <CountingNumber
-                    key={`teamB-${previousTeamBScore}-${previousTeamBScore + calculatedScores.teamB}`}
-                    from={previousTeamBScore}
-                    to={previousTeamBScore + calculatedScores.teamB}
-                    duration={800}
-                    playSound={true}
-                  />
-                </div>
-                {calculatedScores.teamB > 0 && (
-                  <div className="mt-2 text-lg font-display text-green-600 animate-bounce">
-                    +{calculatedScores.teamB} pts!
-                  </div>
-                )}
-              </div>
             </div>
-
-          </div>
-        </div>
+          </div>,
+          portalRoot
+        )
       )}
 
       {/* Loading Screen - No quiz 후 다음 라운드 전환 시 표시 */}

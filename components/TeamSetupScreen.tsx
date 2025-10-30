@@ -106,7 +106,12 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
           animationDelay: `${index * 0.15}s`
         }}
       >
-        {player.avatarEmoji}
+        <img
+          src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(player.name)}`}
+          alt={`${player.name} avatar`}
+          className="w-24 h-24 rounded-full"
+          draggable={false}
+        />
       </div>
       <span className="mt-2 text-gray-700 font-sans font-bold text-base">{player.name}</span>
     </div>

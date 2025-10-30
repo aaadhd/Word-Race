@@ -13,7 +13,7 @@ import type { RoundData } from '../types.ts';
 export const roundDataDB: RoundData[] = [
   {
     word: 'dog',
-    wordImage: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/dog.png',
     quiz: {
       question: 'Which animal is a pet and says "woof"?',
       options: ['Cat', 'Dog', 'Bird', 'Fish'],
@@ -22,7 +22,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'house',
-    wordImage: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/house.png',
     quiz: {
       question: 'Where do people live?',
       options: ['House', 'Tree', 'Car', 'Water'],
@@ -31,7 +31,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'fish',
-    wordImage: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/fish.png',
     quiz: {
       question: 'What animal lives in water and has fins?',
       options: ['Bird', 'Fish', 'Dog', 'Cat'],
@@ -40,7 +40,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'star',
-    wordImage: 'https://images.unsplash.com/photo-1502134249126-9f3755a50d78?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/star.png',
     quiz: {
       question: 'What shines in the night sky?',
       options: ['Sun', 'Moon', 'Star', 'Cloud'],
@@ -49,7 +49,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'tree',
-    wordImage: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/tree.png',
     quiz: {
       question: 'What grows tall and has green leaves?',
       options: ['Tree', 'Flower', 'Grass', 'Rock'],
@@ -58,7 +58,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'bird',
-    wordImage: 'https://images.unsplash.com/photo-1444464666168-49d633b86797?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/bird.png',
     quiz: {
       question: 'What animal can fly and has wings?',
       options: ['Fish', 'Bird', 'Dog', 'Cat'],
@@ -67,7 +67,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'flower',
-    wordImage: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/flower.png',
     quiz: {
       question: 'What is pretty and grows in gardens?',
       options: ['Rock', 'Flower', 'Water', 'Sand'],
@@ -76,7 +76,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'cake',
-    wordImage: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/cake.png',
     quiz: {
       question: 'What do you eat on birthdays?',
       options: ['Cake', 'Soup', 'Salad', 'Bread'],
@@ -85,7 +85,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'book',
-    wordImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/book.png',
     quiz: {
       question: 'What do you read to learn new things?',
       options: ['Book', 'Phone', 'TV', 'Radio'],
@@ -94,7 +94,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'car',
-    wordImage: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/car.png',
     quiz: {
       question: 'What vehicle has four wheels and drives on roads?',
       options: ['Boat', 'Car', 'Plane', 'Bike'],
@@ -103,7 +103,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'apple',
-    wordImage: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/apple.png',
     quiz: {
       question: 'What red fruit grows on trees?',
       options: ['Apple', 'Banana', 'Orange', 'Grape'],
@@ -112,7 +112,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'sun',
-    wordImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/sun.png',
     quiz: {
       question: 'What bright light shines during the day?',
       options: ['Moon', 'Sun', 'Star', 'Lamp'],
@@ -121,7 +121,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'ball',
-    wordImage: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/ball.png',
     quiz: {
       question: 'What round object do you play with?',
       options: ['Ball', 'Box', 'Book', 'Cup'],
@@ -130,7 +130,7 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'cat',
-    wordImage: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/cat.png',
     quiz: {
       question: 'What small pet says "meow"?',
       options: ['Dog', 'Cat', 'Bird', 'Fish'],
@@ -139,11 +139,20 @@ export const roundDataDB: RoundData[] = [
   },
   {
     word: 'rainbow',
-    wordImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop&crop=center',
+    wordImage: '/questions/rainbow.png',
     quiz: {
       question: 'What appears in the sky after rain?',
       options: ['Cloud', 'Rainbow', 'Sun', 'Moon'],
       correctAnswer: 'Rainbow',
+    },
+  },
+  {
+    word: 'balloon',
+    wordImage: '/questions/balloon.png',
+    quiz: {
+      question: 'What do you fill with air and it can float?',
+      options: ['Balloon', 'Rock', 'Car', 'Book'],
+      correctAnswer: 'Balloon',
     },
   },
 ];

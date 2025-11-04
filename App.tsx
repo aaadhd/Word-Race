@@ -5,7 +5,8 @@ import type { RoundData, Scores, Teams } from './types.ts';
 import { fetchRoundData, resetUsedWords, testGeminiConnection } from './services/geminiService.ts';
 import { initializeTeams, shuffleTeams, MOCK_PLAYERS } from './constants/teamSetup.ts';
 import type { Teams as TeamSetupTeams } from './types/team-setup-types.ts';
-import { preloadNextRoundImages, preloadAllGameImages } from './utils/imagePreloader.ts';
+import { preloadNextRoundImages, preloadAllGameImages, preloadAllGameVideos, preloadNextRoundVideos, preloadAllMusics, preloadImages } from './utils/imagePreloader.ts';
+import { roundDataDB } from './data/roundDataDB.ts';
 
 import GameSetup from './components/GameSetup.tsx';
 import GameTitleScreen from './components/GameTitleScreen.tsx';
@@ -102,6 +103,29 @@ const App: React.FC = () => {
       console.warn('Some images failed to preload:', err);
     });
 
+    // Preload all game videos as well
+    preloadAllGameVideos().catch(err => {
+      console.warn('Some videos failed to preload:', err);
+    });
+
+    // Preload question images from roundDataDB if paths are provided
+    try {
+      const questionImages = Array.from(new Set((roundDataDB || [])
+        .map(d => d.wordImage)
+        .filter((v): v is string => typeof v === 'string' && v.length > 0)));
+      if (questionImages.length) {
+        console.log('🖼️ Preloading question images...', questionImages);
+        preloadImages(questionImages).catch(err => console.warn('Failed to preload question images:', err));
+      }
+    } catch (e) {
+      console.warn('Could not preload question images:', e);
+    }
+
+    // Preload musics (e.g., bgm)
+    preloadAllMusics().catch(err => {
+      console.warn('Some musics failed to preload:', err);
+    });
+
     setTotalRounds(rounds);
     setGameMode(mode);
     setQuizIncluded(includeQuiz);
@@ -124,6 +148,10 @@ const App: React.FC = () => {
       // Preload images for next round in the background
       preloadNextRoundImages(currentRound).catch(err => {
         console.warn('Failed to preload next round images:', err);
+      });
+      // Preload videos for next round in the background
+      preloadNextRoundVideos(currentRound).catch(err => {
+        console.warn('Failed to preload next round videos:', err);
       });
     }
   }, [gameState, currentRound, totalRounds]);

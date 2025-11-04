@@ -20,6 +20,7 @@ reference/
 ├── GameSettingsModal.tsx          # 메인 컴포넌트
 ├── game-settings-types.ts         # 타입 정의 및 유틸리티
 ├── GameSettingsExamples.tsx       # 다양한 사용 예제
+├── SETTINGS-QUICK-START.md        # 빠른 시작 가이드 (5분 안에 시작)
 ├── GameSettingsUsageGuide.md      # 상세 사용 가이드
 └── README-GameSettings.md         # 이 문서
 ```
@@ -81,6 +82,7 @@ import { GAME_CUSTOMIZATIONS } from './reference/game-settings-types';
 | 게임 | Primary | Secondary | Background | Button |
 |------|---------|-----------|------------|--------|
 | **Stop & Go** | Purple | Cyan | Purple-50 | Cyan-500 |
+| **Word Race** | Purple | Cyan | Purple-50 | Cyan-500 |
 | **Math Quiz** | Blue | Green | Blue-50 | Green-500 |
 | **Science Quiz** | Indigo | Yellow | Indigo-50 | Yellow-500 |
 
@@ -89,7 +91,8 @@ import { GAME_CUSTOMIZATIONS } from './reference/game-settings-types';
 - **레슨 범위**: 사용 가능한 레슨 목록 커스터마이징
 - **학습 포커스**: 게임별 학습 영역 설정
 - **게임 모드**: Teams/Solo 모드 지원
-- **문제 순서**: 동일 순서/랜덤 순서 선택
+- **플레이 타입**: Trace/Draw 선택
+- **퀴즈 포함**: 퀴즈 포함 여부 선택
 - **라운드 수**: 최대 라운드 수 제한
 - **게임 시간**: 총 게임 시간 설정
 
@@ -100,8 +103,9 @@ interface GameSettings {
   selectedLessons: number[];           // 선택된 레슨들 [1, 2, 3]
   learningFocus: string[];             // 학습 포커스 ['Vocabulary', 'Reading']
   gameMode: 'teams' | 'solo';         // 게임 모드
-  questionOrder: 'same' | 'randomized'; // 문제 순서
-  rounds: number;                      // 라운드 수 (1-15)
+  playType: 'trace' | 'draw';         // 플레이 타입
+  quizIncluded: boolean;               // 퀴즈 포함 여부
+  rounds: number;                      // 라운드 수 (1-12)
   totalTime: number;                   // 총 시간 분 (0-120)
 }
 ```
@@ -159,7 +163,7 @@ const { toggleLesson, updateRounds } = createSettingsUpdater();
 const newSettings = toggleLesson(5, currentSettings, [8]);
 
 // 라운드 업데이트
-const newSettings = updateRounds(1, currentSettings, 15);
+const newSettings = updateRounds(1, currentSettings, 12);
 ```
 
 ## 🎮 게임별 사전 설정
@@ -185,6 +189,27 @@ const stopAndGoConfig = {
 };
 ```
 
+### Word Race 게임
+
+```tsx
+const wordRaceConfig = {
+  gameTitle: 'Word Race',
+  gameImage: '/wordrace.png',
+  gameGuideText: 'Game Guide',
+  availableLessons: [1, 2, 3, 4, 5, 6, 7, 8],
+  availableLearningFocus: ['Vocabulary', 'Reading', 'Speaking', 'Writing', 'Grammar', 'Action Learning'],
+  disabledLessons: [],
+  maxRounds: 10,
+  maxTime: 60,
+  customStyles: {
+    primaryColor: 'purple',
+    secondaryColor: 'cyan',
+    backgroundColor: 'purple-50',
+    buttonColor: 'cyan-500'
+  }
+};
+```
+
 ### 수학 퀴즈 게임
 
 ```tsx
@@ -195,7 +220,7 @@ const mathQuizConfig = {
   availableLessons: [1, 2, 3, 4, 5],
   availableLearningFocus: ['Addition', 'Subtraction', 'Multiplication', 'Division'],
   disabledLessons: [],
-  maxRounds: 15,
+  maxRounds: 12,
   maxTime: 45,
   customStyles: {
     primaryColor: 'blue',
@@ -229,7 +254,7 @@ const updateSettings = (settings: GameSettings, updates: Partial<GameSettings>):
 
 - ✅ 최소 하나의 레슨 선택
 - ✅ 최소 하나의 학습 포커스 선택
-- ✅ 라운드 수 범위 (1-15)
+- ✅ 라운드 수 범위 (1-12)
 - ✅ 총 게임 시간 범위 (0-120분)
 
 ### 에러 처리 예제

@@ -54,7 +54,7 @@ export const GAME_CUSTOMIZATIONS = {
     availableLessons: DEFAULT_LESSONS,
     availableLearningFocus: DEFAULT_LEARNING_FOCUS,
     disabledLessons: [8], // Lesson 8 비활성화
-    maxRounds: 10,
+    maxRounds: 12,
     maxTime: 60,
     customStyles: {
       primaryColor: 'purple',
@@ -72,7 +72,7 @@ export const GAME_CUSTOMIZATIONS = {
     availableLessons: DEFAULT_LESSONS,
     availableLearningFocus: ['Vocabulary', 'Reading', 'Speaking', 'Writing', 'Grammar', 'Action Learning'],
     disabledLessons: [],
-    maxRounds: 10,
+    maxRounds: 12,
     maxTime: 60,
     customStyles: {
       primaryColor: 'purple',
@@ -113,8 +113,8 @@ export const validateGameSettings = (settings: GameSettings): { isValid: boolean
     errors.push('최소 하나의 학습 포커스를 선택해야 합니다.');
   }
   
-  if (settings.rounds < 1 || settings.rounds > 15) {
-    errors.push('라운드 수는 1-15 사이여야 합니다.');
+  if (settings.rounds < 1 || settings.rounds > 12) {
+    errors.push('라운드 수는 1-12 사이여야 합니다.');
   }
   
   if (settings.totalTime < 0 || settings.totalTime > 120) {
@@ -166,7 +166,7 @@ export const createSettingsUpdater = () => {
     };
   };
   
-  const updateRounds = (delta: number, currentSettings: GameSettings, maxRounds: number = 10) => {
+  const updateRounds = (delta: number, currentSettings: GameSettings, maxRounds: number = 12) => {
     return {
       ...currentSettings,
       rounds: Math.max(1, Math.min(maxRounds, currentSettings.rounds + delta))

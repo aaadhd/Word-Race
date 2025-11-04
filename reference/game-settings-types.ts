@@ -3,7 +3,8 @@ export interface GameSettings {
   selectedLessons: number[];
   learningFocus: string[];
   gameMode: 'teams' | 'solo';
-  questionOrder: 'same' | 'randomized';
+  playType: 'trace' | 'draw'; // questionOrder를 playType으로 변경
+  quizIncluded: boolean; // 퀴즈 포함 여부 추가
   rounds: number;
   totalTime: number;
 }
@@ -33,7 +34,8 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   selectedLessons: [1],
   learningFocus: ['Vocabulary'],
   gameMode: 'teams',
-  questionOrder: 'same',
+  playType: 'trace', // 기본값을 trace로 설정
+  quizIncluded: true, // 기본적으로 퀴즈 포함
   rounds: 6,
   totalTime: 0
 };
@@ -52,7 +54,25 @@ export const GAME_CUSTOMIZATIONS = {
     availableLessons: DEFAULT_LESSONS,
     availableLearningFocus: DEFAULT_LEARNING_FOCUS,
     disabledLessons: [8], // Lesson 8 비활성화
-    maxRounds: 10,
+    maxRounds: 12,
+    maxTime: 60,
+    customStyles: {
+      primaryColor: 'purple',
+      secondaryColor: 'cyan',
+      backgroundColor: 'purple-50',
+      buttonColor: 'cyan-500'
+    }
+  },
+  
+  // Word Race 게임 설정
+  wordRace: {
+    gameTitle: 'Word Race',
+    gameImage: '/wordrace.png',
+    gameGuideText: 'Game Guide',
+    availableLessons: DEFAULT_LESSONS,
+    availableLearningFocus: ['Vocabulary', 'Reading', 'Speaking', 'Writing', 'Grammar', 'Action Learning'],
+    disabledLessons: [],
+    maxRounds: 12,
     maxTime: 60,
     customStyles: {
       primaryColor: 'purple',
@@ -93,8 +113,8 @@ export const validateGameSettings = (settings: GameSettings): { isValid: boolean
     errors.push('최소 하나의 학습 포커스를 선택해야 합니다.');
   }
   
-  if (settings.rounds < 1 || settings.rounds > 15) {
-    errors.push('라운드 수는 1-15 사이여야 합니다.');
+  if (settings.rounds < 1 || settings.rounds > 12) {
+    errors.push('라운드 수는 1-12 사이여야 합니다.');
   }
   
   if (settings.totalTime < 0 || settings.totalTime > 120) {
@@ -117,7 +137,8 @@ export const initializeGameSettings = (
     selectedLessons: config.availableLessons ? [config.availableLessons[0]] : [1],
     learningFocus: config.availableLearningFocus ? [config.availableLearningFocus[0]] : ['Vocabulary'],
     gameMode: 'teams',
-    questionOrder: 'same',
+    playType: 'trace',
+    quizIncluded: true,
     rounds: 6,
     totalTime: 0
   };
@@ -145,7 +166,7 @@ export const createSettingsUpdater = () => {
     };
   };
   
-  const updateRounds = (delta: number, currentSettings: GameSettings, maxRounds: number = 10) => {
+  const updateRounds = (delta: number, currentSettings: GameSettings, maxRounds: number = 12) => {
     return {
       ...currentSettings,
       rounds: Math.max(1, Math.min(maxRounds, currentSettings.rounds + delta))

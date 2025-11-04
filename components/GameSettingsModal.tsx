@@ -17,7 +17,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   gameGuideText = 'Game Guide',
   availableLessons = DEFAULT_LESSONS,
   availableLearningFocus = DEFAULT_LEARNING_FOCUS,
-  maxRounds = 10,
+  maxRounds = 12,
   maxTime = 60,
   disabledLessons = [],
   customStyles = {}
@@ -220,7 +220,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             {/* Choose Range */}
             <div className="bg-white rounded-2xl p-3 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-bold text-gray-800">Choose Range</h3>
+                <h3 className="text-lg font-bold text-gray-800">Select Range</h3>
                 <p className={`text-xs ${colors.text600}`}>(Multiple selection allowed)</p>
               </div>
               <div className="grid grid-cols-4 gap-3">
@@ -246,7 +246,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             {/* Choose Learning Focus */}
             <div className="bg-white rounded-2xl p-3 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-bold text-gray-800">Choose Learning Focus</h3>
+                <h3 className="text-lg font-bold text-gray-800">Select Learning Focus</h3>
                 <p className={`text-xs ${colors.text600}`}>(Multiple selection allowed)</p>
               </div>
               <div className="flex gap-3">
@@ -345,7 +345,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
               {/* Quiz Included */}
               <div className="bg-white rounded-2xl p-3 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">Quiz Included</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">With Quiz</h3>
                 <div className="flex gap-4">
                   <button
                     onClick={() => setSettings(prev => ({ ...prev, quizIncluded: true }))}
@@ -380,7 +380,12 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 <div className="flex items-center justify-center gap-4">
                   <button
                     onClick={() => handleRoundsUpdate(-1)}
-                    className={`w-10 h-10 ${colors.bg200} ${colors.text800} rounded-full font-bold text-lg ${colors.bg300.replace('bg-', 'hover:bg-')} transition-all border-0`}
+                    disabled={settings.rounds <= 1}
+                    className={`w-10 h-10 rounded-full font-bold text-lg transition-all border-0 ${
+                      settings.rounds <= 1
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : `${colors.bg200} ${colors.text800} ${colors.bg300.replace('bg-', 'hover:bg-')}`
+                    }`}
                   >
                     -
                   </button>
@@ -389,7 +394,12 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   </div>
                   <button
                     onClick={() => handleRoundsUpdate(1)}
-                    className={`w-10 h-10 ${colors.bg200} ${colors.text800} rounded-full font-bold text-lg ${colors.bg300.replace('bg-', 'hover:bg-')} transition-all border-0`}
+                    disabled={settings.rounds >= maxRounds}
+                    className={`w-10 h-10 rounded-full font-bold text-lg transition-all border-0 ${
+                      settings.rounds >= maxRounds
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : `${colors.bg200} ${colors.text800} ${colors.bg300.replace('bg-', 'hover:bg-')}`
+                    }`}
                   >
                     +
                   </button>

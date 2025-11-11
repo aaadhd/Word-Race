@@ -6,7 +6,7 @@
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://ai.studio/apps/drive/16Y4Hqcc9nYkFWNvv5Yw8U6F4R0zO1Mdn
+View your app in AI Studio: https://wordrace-druid-378e9c.netlify.app
 
 ## Run Locally
 

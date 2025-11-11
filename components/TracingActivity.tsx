@@ -285,16 +285,6 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
 
 
 
-  if (isScoring) {
-    return (
-        <div className="flex flex-col items-center justify-center h-full text-primary-text">
-            <div className="w-16 h-16 border-8 border-dashed rounded-full animate-spin border-accent-cyan"></div>
-            <p className="mt-4 text-3xl font-display">Checking your writing...</p>
-        </div>
-    );
-  }
-
-
   // 현재 라운드의 사이클 계산 (1-4 반복)
   const cycleRound = currentRound <= 4 ? currentRound : ((currentRound - 1) % 4) + 1;
 
@@ -631,6 +621,16 @@ const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete
           </div>,
           portalRoot
         )
+      )}
+
+      {/* Checking Writing Overlay - isScoring 상태일 때 표시 */}
+      {isScoring && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-[100001] flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center text-white">
+            <div className="w-16 h-16 border-8 border-dashed rounded-full animate-spin border-white"></div>
+            <p className="mt-4 text-3xl font-display">Checking your writing...</p>
+          </div>
+        </div>
       )}
 
       {/* Loading Screen - No quiz 후 다음 라운드 전환 시 표시 */}

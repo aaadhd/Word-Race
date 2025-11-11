@@ -14,7 +14,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
       "It's Team A vs Team B! Both teams try to win in each round!",
   },
   {
-    image: '/tutorial/2.jpg',
+    image: '/tutorial/2.png',
     title: 'Two Ways to Play!',
     description:
       'There are two ways to play: Trace Mode and Draw Mode. Let me show you both!',
@@ -32,7 +32,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
       'Look at the picture. Think of the word and write it by yourself!',
   },
   {
-    image: '/tutorial/5.jpg',
+    image: '/tutorial/5.png',
     title: 'Do Your Best!',
     description:
       'Write well to win! Try your best!',

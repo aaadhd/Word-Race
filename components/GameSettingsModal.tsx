@@ -21,8 +21,9 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   maxRounds = 12,
   maxTime = 60,
   disabledLessons = [],
-  customStyles = {}
+  customStyles: customStylesProp
 }) => {
+  const customStyles: NonNullable<GameSettingsModalProps['customStyles']> = customStylesProp ?? {};
   const [settings, setSettings] = useState<GameSettings>({
     ...DEFAULT_GAME_SETTINGS,
     selectedLessons: availableLessons.length > 0 ? [availableLessons[0]] : [1],

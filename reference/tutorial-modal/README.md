@@ -23,7 +23,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
 
 ### 3. 이미지 준비
 - `public/tutorial/` 폴더에 튜토리얼 이미지 파일 배치 (1.jpg, 2.jpg, ...)
-- `public/button/close.png` - 닫기 버튼 이미지 (40×40px)
+- `public/button/close.png` - 닫기 버튼 이미지 (기본 40×40px, 필요 시 사이즈 변경)
 
 ### 4. 부모 컴포넌트에서 사용
 
@@ -46,6 +46,21 @@ function YourComponent() {
     </>
   );
 }
+```
+
+### 5. 스테이지(1280×800) 내부에서 사용하기
+
+게임 플레이 화면처럼 1280×800 스테이지 안에서만 모달을 띄우고 싶다면 `variant="stage"`를 전달합니다. 이렇게 하면 오버레이가 스테이지 영역뿐 아니라 스테이지의 스케일 변형에도 맞춰집니다.
+
+```tsx
+<main className="relative" style={{ width: 1280, height: 800 }}>
+  {/* stage contents */}
+  <TutorialModal
+    isOpen={isTutorialOpen}
+    onClose={() => setIsTutorialOpen(false)}
+    variant="stage"
+  />
+</main>
 ```
 
 ## 디자인 사양

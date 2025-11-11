@@ -54,9 +54,18 @@ const TUTORIAL_STEPS: TutorialStep[] = [
 interface TutorialModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /**
+   * 'global'  - viewport 전체를 덮는 레이어 (예: 세팅 화면)
+   * 'stage'   - 1280×800 등 고정 스테이지 내부에만 표시할 때 사용
+   */
+  variant?: 'global' | 'stage';
 }
 
-const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
+const TutorialModal: React.FC<TutorialModalProps> = ({
+  isOpen,
+  onClose,
+  variant = 'global',
+}) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
@@ -88,8 +97,13 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const wrapperPositionClass =
+    variant === 'stage' ? 'absolute inset-0' : 'fixed inset-0';
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 px-4">
+    <div
+      className={`${wrapperPositionClass} bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 px-4`}
+    >
       <button
         onClick={onClose}
         className="absolute focus:outline-none"

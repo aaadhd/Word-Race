@@ -9,6 +9,7 @@ import {
   validateGameSettings
 } from '../types/game-settings-types';
 import TutorialModal from './TutorialModal';
+import SettingsGuideModal from './SettingsGuideModal';
 
 const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   onStart,
@@ -30,6 +31,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
     learningFocus: availableLearningFocus.length > 0 ? [availableLearningFocus[0]] : ['Vocabulary']
   });
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isSettingsGuideOpen, setIsSettingsGuideOpen] = useState(false);
 
   const {
     toggleLesson,
@@ -181,7 +183,10 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
         {/* Right Side Buttons */}
         <div className="flex gap-3">
           {/* Info Button */}
-          <button className={`w-10 h-10 ${colors.bg300} ${colors.bg400.replace('bg-', 'hover:bg-')} text-white rounded-full flex items-center justify-center transition-all shadow-sm`}>
+          <button
+            onClick={() => setIsSettingsGuideOpen(true)}
+            className={`w-10 h-10 ${colors.bg300} ${colors.bg400.replace('bg-', 'hover:bg-')} text-white rounded-full flex items-center justify-center transition-all shadow-sm`}
+          >
             <span className="text-sm font-bold">i</span>
           </button>
 
@@ -225,7 +230,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             <div className="max-w-4xl mx-auto space-y-3">
             
             {/* Choose Range */}
-            <div className="bg-white rounded-2xl p-3 shadow-sm">
+            <div className="bg-white rounded-2xl p-3 shadow-sm" data-guide="lessons">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-gray-800">Select Range</h3>
                 <p className={`text-xs ${colors.text600}`}>(Multiple selection allowed)</p>
@@ -251,7 +256,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
             </div>
 
             {/* Choose Learning Focus */}
-            <div className="bg-white rounded-2xl p-3 shadow-sm">
+            <div className="bg-white rounded-2xl p-3 shadow-sm" data-guide="learning-focus">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-gray-800">Select Learning Focus</h3>
                 <p className={`text-xs ${colors.text600}`}>(Multiple selection allowed)</p>
@@ -320,7 +325,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               </div>
 
               {/* Play Type */}
-              <div className="bg-white rounded-2xl p-3 shadow-sm">
+              <div className="bg-white rounded-2xl p-3 shadow-sm" data-guide="game-mode">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Play Type</h3>
                 <div className="flex gap-4">
                   <button
@@ -351,7 +356,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               </div>
 
               {/* Quiz Included */}
-              <div className="bg-white rounded-2xl p-3 shadow-sm">
+              <div className="bg-white rounded-2xl p-3 shadow-sm" data-guide="quiz">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">With Quiz</h3>
                 <div className="flex gap-4">
                   <button
@@ -382,7 +387,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               </div>
 
               {/* Rounds */}
-              <div className="bg-white rounded-2xl p-3 shadow-sm">
+              <div className="bg-white rounded-2xl p-3 shadow-sm" data-guide="rounds">
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Rounds</h3>
                 <div className="flex items-center justify-center gap-4">
                   <button
@@ -423,6 +428,7 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
               <button
                 onClick={handleStart}
                 className={`px-8 py-3 ${buttonColors.bg} text-white rounded-lg font-bold text-lg ${buttonColors.hover} shadow-lg`}
+                data-guide="start-button"
               >
                 Play
               </button>
@@ -435,6 +441,11 @@ const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       <TutorialModal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
+      />
+
+      <SettingsGuideModal
+        isOpen={isSettingsGuideOpen}
+        onClose={() => setIsSettingsGuideOpen(false)}
       />
     </>
   );

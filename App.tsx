@@ -776,17 +776,18 @@ const App: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
 
-      {/* Tutorial Modal */}
-      <TutorialModal
-        isOpen={isTutorialOpen}
-        onClose={() => {
-          setIsTutorialOpen(false);
-          setIsPaused(false);
-          setShowMenu(false);
-        }}
-      />
+        {/* Tutorial Modal - Stage Scoped */}
+        <TutorialModal
+          isOpen={isTutorialOpen}
+          onClose={() => {
+            setIsTutorialOpen(false);
+            setIsPaused(false);
+            setShowMenu(false);
+          }}
+          variant="stage"
+        />
+      </main>
     </div>
   );
 };

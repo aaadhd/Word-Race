@@ -21,6 +21,7 @@ import CaptureMode from './components/CaptureMode.tsx';
 import PageTransition from './components/PageTransition.tsx';
 import BGMPlayer from './components/BGMPlayer.tsx';
 import RoundLoading from './components/RoundLoading.tsx';
+import TutorialModal from './components/TutorialModal.tsx';
 import { ensureAudioUnlocked } from './utils/soundEffects.ts';
 
 const App: React.FC = () => {
@@ -42,6 +43,7 @@ const App: React.FC = () => {
   const [isCaptureMode, setIsCaptureMode] = useState<boolean>(false);
   const [isLoadingNextRound, setIsLoadingNextRound] = useState<boolean>(false);
   const [isFadingOutPreviousRound, setIsFadingOutPreviousRound] = useState<boolean>(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
 
   // 브라우저 크기에 맞춰 스케일 계산
   useEffect(() => {
@@ -274,10 +276,12 @@ const App: React.FC = () => {
 
   const handleOpenMenu = () => {
     setShowMenu(true);
+    setIsPaused(true);
   }
 
   const handleCloseMenu = () => {
     setShowMenu(false);
+    setIsPaused(false);
   }
 
   const handleEndGame = () => {
@@ -416,7 +420,7 @@ const App: React.FC = () => {
               roundData={roundData}
               onComplete={handleRoundComplete}
               gameMode={gameMode}
-              isPaused={gameState === GameState.QUIZ}
+              isPaused={gameState === GameState.QUIZ || isPaused || showMenu}
               onTimerChange={handleTracingTimerChange}
               resetActivity={false}
               currentRound={currentRound}
@@ -532,7 +536,7 @@ const App: React.FC = () => {
         )}
         
         {/* Pause Overlay */}
-        {isPaused && (
+        {isPaused && !showMenu && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 text-center">
               <h2 className="text-4xl font-display text-primary-text mb-6">PAUSED</h2>
@@ -549,14 +553,28 @@ const App: React.FC = () => {
         {/* Game Menu Modal */}
         {showMenu && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 text-center">
+            <div className="bg-white rounded-2xl p-8 text-center relative">
+              {/* Close Button */}
+              <button
+                onClick={handleCloseMenu}
+                className="absolute -top-3 -right-3 w-12 h-12 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-800 transition-colors shadow-lg"
+                aria-label="Close menu"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
               <h2 className="text-4xl font-display text-primary-text mb-6">Game Menu</h2>
               <div className="flex flex-col gap-4">
                 <button
-                  onClick={handleCloseMenu}
+                  onClick={() => {
+                    setShowMenu(false);
+                    setIsTutorialOpen(true);
+                  }}
                   className="px-8 py-4 text-2xl font-display text-white bg-blue-500 hover:bg-blue-600 rounded-full shadow-lg transition-transform transform hover:scale-105"
                 >
-                  Resume
+                  Game Guide
                 </button>
                 <button
                   onClick={handleEndGame}
@@ -759,6 +777,16 @@ const App: React.FC = () => {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Tutorial Modal */}
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => {
+          setIsTutorialOpen(false);
+          setIsPaused(false);
+          setShowMenu(false);
+        }}
+      />
     </div>
   );
 };

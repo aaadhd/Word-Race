@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { GameMode } from '../types.ts';
-import SpriteAnimation from './SpriteAnimation.tsx';
 import { playDrawingComplete } from '../utils/soundEffects.ts';
+import { TRACING_TIME_SECONDS } from '../constants/gameConstants.ts';
+import { getFontSize } from '../utils/fontUtils.ts';
 
 interface DrawingCanvasProps {
   word: string;
@@ -15,17 +16,6 @@ interface DrawingCanvasProps {
   playAnimation?: boolean;
 }
 
-const TRACING_TIME_SECONDS = 20;
-
-const getFontSize = (length: number): number => {
-    if (length <= 5) return 120;
-    if (length <= 7) return 96;
-    if (length <= 9) return 76;
-    if (length <= 11) return 60;
-    if (length <= 13) return 52;
-    return 44;
-};
-
 const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone, mode, isPaused, startAtMs, onTimerChange, currentRound = 1, playAnimation = false }) => {
   console.log('TracingCanvas - strokeColor:', strokeColor, 'isTeamB:', strokeColor === '#ef4444');
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,6 +25,8 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
   const [timeLeft, setTimeLeft] = useState(TRACING_TIME_SECONDS);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isCanvasDisabled, setIsCanvasDisabled] = useState(false);
+  const pausedAtRef = useRef<number | null>(null);
+  const totalPausedTimeRef = useRef<number>(0);
 
   // Initialize the offscreen canvas for user drawings and set up non-passive event listeners
   useEffect(() => {
@@ -264,12 +256,29 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ word, strokeColor, onDone
     drawWordTemplate(context);
   }, [word, drawWordTemplate]);
 
-  // 공유 시작시각 기반 타이머: 모든 인스턴스가 같은 절대시간을 기준으로 계산
+  // 일시 중지 시간 추적
+  useEffect(() => {
+    if (isPaused) {
+      // 일시 중지 시작
+      if (pausedAtRef.current === null) {
+        pausedAtRef.current = Date.now();
+      }
+    } else {
+      // 일시 중지 해제
+      if (pausedAtRef.current !== null) {
+        const pausedDuration = Date.now() - pausedAtRef.current;
+        totalPausedTimeRef.current += pausedDuration;
+        pausedAtRef.current = null;
+      }
+    }
+  }, [isPaused]);
+
+  // 공유 시작시각 기반 타이머: 모든 인스턴스가 같은 절대시간을 기준으로 계산 (일시 중지 시간 보정)
   useEffect(() => {
     if (isPaused || startAtMs == null) return;
 
     const compute = () => {
-      const elapsedSec = Math.floor((Date.now() - startAtMs) / 1000);
+      const elapsedSec = Math.floor((Date.now() - startAtMs - totalPausedTimeRef.current) / 1000);
       const remaining = Math.max(0, TRACING_TIME_SECONDS - elapsedSec);
       setTimeLeft(remaining);
       if (remaining === 0) {

@@ -4,6 +4,12 @@ import { Team } from '../types.ts';
 import QuizPopup, { QuizData } from './QuizPopup.tsx';
 import QuizResultModal from './QuizResultModal.tsx';
 import { playCorrectAnswer, playWrongAnswer } from '../utils/soundEffects.ts';
+import {
+  QUIZ_TIME_SECONDS,
+  FEEDBACK_DISPLAY_TIME,
+  QUIZ_MODAL_DISPLAY_TIME,
+  RESULT_DISPLAY_TIME
+} from '../constants/gameConstants.ts';
 
 interface QuizActivityProps {
   quiz: Quiz;
@@ -14,11 +20,6 @@ interface QuizActivityProps {
   previousTeamBScore: number;
   onFadeOutStart?: () => void;
 }
-
-const QUIZ_TIME_SECONDS = 15;
-const FEEDBACK_DISPLAY_TIME = 1200; // 1.2초 - 피드백 토스트 표시 시간
-const QUIZ_MODAL_DISPLAY_TIME = 3000; // 3초 - 퀴즈 모달(정답/오답 색상) 유지 시간
-const RESULT_DISPLAY_TIME = 3200; // 퀴즈 결과(점수 상승) 모달 표시 시간을 연장하여 충분히 확인 가능하게 함
 
 type QuizResult = {
   isCorrect: boolean;

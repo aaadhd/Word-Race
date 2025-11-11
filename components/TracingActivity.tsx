@@ -9,9 +9,9 @@ import { recognizeHandwriting } from '../services/geminiService.ts';
 import CountingNumber from './CountingNumber.tsx';
 import RoundLoading from './RoundLoading.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RESULT_MODAL_DISPLAY_TIME, LOADING_SCREEN_TIME } from '../constants/gameConstants.ts';
 
-const RESULT_DISPLAY_TIME = 3200; // 점수판 모달 유지 시간을 더 늘려 충분한 확인 시간 제공
-const LOADING_SCREEN_TIME = 1500; // 로딩 화면 표시 시간
+const RESULT_DISPLAY_TIME = RESULT_MODAL_DISPLAY_TIME; // 점수판 모달 유지 시간을 더 늘려 충분한 확인 시간 제공
 
 interface DrawingActivityProps {
   roundData: RoundData;
@@ -58,15 +58,6 @@ const speakWord = (word: string) => {
 
 const DrawingActivity: React.FC<DrawingActivityProps> = ({ roundData, onComplete, gameMode, isPaused, onTimerChange, hideResultModal = false, resetActivity = false, currentRound = 1, isQuizMode = false, quizIncluded = false, onQuizStart, previousTeamAScore = 0, previousTeamBScore = 0 }) => {
   console.log('TracingActivity - gameMode received:', gameMode);
-  const alpacaVideoRef = useRef<HTMLVideoElement>(null);
-  const catVideoRef = useRef<HTMLVideoElement>(null);
-  const chickVideoRef = useRef<HTMLVideoElement>(null);
-  const pandaVideoRef = useRef<HTMLVideoElement>(null);
-  const slothVideoRef = useRef<HTMLVideoElement>(null);
-  const koalaVideoRef = useRef<HTMLVideoElement>(null);
-  const tigerVideoRef = useRef<HTMLVideoElement>(null);
-  const capybaraVideoRef = useRef<HTMLVideoElement>(null);
-  const bigcatVideoRef = useRef<HTMLVideoElement>(null);
   const [teamADone, setTeamADone] = useState(false);
   const [teamBDone, setTeamBDone] = useState(false);
   const [teamARawResult, setTeamARawResult] = useState<RawResult | null>(null);

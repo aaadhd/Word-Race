@@ -1,24 +1,5 @@
-// 팀 세팅 관련 타입 정의
-export type TeamColor = 'blue' | 'red';
-
-export interface Player {
-  id: string;
-  name: string;
-  avatarEmoji: string;
-  team: TeamColor;
-}
-
-export interface Teams {
-  blue: Player[];
-  red: Player[];
-}
-
-// 드래그 앤 드롭 관련 타입
-export interface DragItem {
-  player: Player;
-  sourceTeam: TeamColor;
-  sourceIndex: number;
-}
+// 팀 세팅 관련 타입 정의 (types.ts에서 import)
+export type { TeamColor, Player, Teams, DragItem } from '../types.ts';
 
 // 팀 마스코트 정의
 export const TEAM_MASCOTS: { [key in TeamColor]: string } = {

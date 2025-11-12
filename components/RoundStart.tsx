@@ -14,7 +14,18 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
   useEffect(() => {
     setVideoLoaded(false); // 라운드 변경 시 로딩 상태 리셋
     if (backgroundVideoRef.current) {
-      backgroundVideoRef.current.play().catch(console.error);
+      const video = backgroundVideoRef.current;
+      video.currentTime = 0;
+      video.volume = 1;
+      video.muted = true;
+      video
+        .play()
+        .then(() => {
+          video.muted = false;
+          video.volume = 1;
+          return video.play();
+        })
+        .catch(console.error);
     }
   }, [currentRound]);
 
@@ -157,7 +168,6 @@ const RoundStart: React.FC<RoundStartProps> = ({ currentRound, onStart }) => {
       <video
         ref={backgroundVideoRef}
         className="absolute transition-opacity duration-1000"
-        muted
         playsInline
         preload="auto"
         onLoadedData={handleVideoLoaded}
